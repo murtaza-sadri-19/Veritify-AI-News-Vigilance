@@ -79,13 +79,13 @@ TruthTrack offers a practical, robust, and ethically sound solution to the misin
 
 ## **How to run**
 
-1. **Clone the repository in your local system**
+1. **Clone the repository in your local system.**
 2. **Open Terminal ( Ctrl + ` )**
 3. **Change directory to \TruthTrack**
-4. **Type ```pip install virtualenv``` in the terminal
-5. **Type ```virtualenv myenv``` in the terminal
-6. **Type ```Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUse``` in the terminal. 
-7. **Type ```myenv\Scripts\activate``` in the terminal. [ Virtual environment is activated]
-8. **Type ```pip install -r requirements.txt``` in the terminal.
-9. **Type ```Python App.py``` in the terminal.
-10. **Open the link of Deployed server which appears on terminal . Example : ```Running on http://127.0.0.1:5000``` **
+4. **Type ```pip install virtualenv``` in the terminal.**
+5. **Type ```virtualenv myenv``` in the terminal.**
+6. **Type ```Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUse``` in the terminal. **
+7. **Type ```myenv\Scripts\activate``` in the terminal. [ Virtual environment is activated]**
+8. **Type ```pip install -r requirements.txt``` in the terminal.**
+9. **Type ```Python App.py``` in the terminal.**
+10. **Open the link of Deployed server which appears on terminal . Example : ```Running on http://127.0.0.1:5000```**
