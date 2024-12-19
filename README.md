@@ -76,3 +76,16 @@ Ethics is at the heart of TruthTrack's development. Recognizing the potential in
 ## **Conclusion**
 
 TruthTrack offers a practical, robust, and ethically sound solution to the misinformation challenge in modern media. With its advanced AI-driven approach, TruthTrack provides real-time fact-checking and misinformation detection, empowering broadcasters, journalists, and viewers to uphold media integrity. As TruthTrack continues to evolve, it has the potential to reshape the way information is disseminated, contributing to a more transparent, reliable, and informed society. By addressing both the technical and ethical challenges of misinformation, TruthTrack aligns itself as an essential tool for media professionals committed to delivering truth in an era increasingly fraught with misinformation.
+
+## **How to run**
+
+1. **Clone the repository in your local system.**
+2. **Open Terminal ( Ctrl + ` )**
+3. **Change directory to \TruthTrack**
+4. **Type ```pip install virtualenv``` in the terminal.**
+5. **Type ```virtualenv myenv``` in the terminal.**
+6. **Type ```Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUse``` in the terminal.**
+7. **Type ```myenv\Scripts\activate``` in the terminal. [ Virtual environment is activated]**
+8. **Type ```pip install -r requirements.txt``` in the terminal.**
+9. **Type ```Python App.py``` in the terminal.**
+10. **Open the link of Deployed server which appears on terminal . Example : ```Running on http://127.0.0.1:5000```**
