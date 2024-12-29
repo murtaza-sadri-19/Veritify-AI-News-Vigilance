@@ -1,7 +1,4 @@
 # **TruthTrack: AI Vigilance for Reliable Information**
-# TruthTrack Project Brief
-
-## Project Title: TruthTrack
 
 ### Overview
 TruthTrack is an innovative project aimed at analyzing and categorizing news articles to enhance media literacy and combat misinformation. By utilizing advanced machine learning techniques, TruthTrack empowers users to evaluate the credibility of news sources and understand media biases, ultimately fostering a more informed society.
