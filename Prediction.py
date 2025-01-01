@@ -4,7 +4,6 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import NMF
 
 
-# Assuming preprocess_text is defined elsewhere
 def preprocess_text(text):
     """
     Preprocesses the input text for topic prediction.
@@ -15,8 +14,6 @@ def preprocess_text(text):
     Returns:
         list: A list of preprocessed tokens.
     """
-    # Placeholder for actual preprocessing logic
-    # This function should return a list of tokens after preprocessing the input text.
     return text.lower().split()  # Simple example: lowercase and split by spaces
 
 
@@ -50,12 +47,16 @@ def predict_topic_words(new_abstract, tfidf_vectorizer, nmf_model, no_top_words=
     """
     # Preprocess the new abstract
     new_processed = preprocess_text(new_abstract)
+
     # Join tokens into a single string
     new_processed_str = ' '.join(new_processed)
+
     # Transform using the TF-IDF vectorizer
     new_tfidf = tfidf_vectorizer.transform([new_processed_str])
+
     # Transform using the NMF model to get topic distribution
     new_topic_distribution = nmf_model.transform(new_tfidf)
+
     # Get the topic index with the highest probability
     predicted_topic_idx = new_topic_distribution.argmax(axis=1)[0]
 
@@ -74,10 +75,10 @@ def predict_topic_words(new_abstract, tfidf_vectorizer, nmf_model, no_top_words=
     return primary_topic, subtopics
 
 
+# If this script is run directly, load models and test prediction (optional)
 if __name__ == "__main__":
-    # Load your models from .pkl files
-    tfidf_vectorizer = load_model('tfidf_vectorizer.pkl')
-    nmf_model = load_model('nmf_model.pkl')
+    tfidf_vectorizer = load_model('News Proto/tfidf_vectorizer.pkl')
+    nmf_model = load_model('News Proto/nmf_model.pkl')
 
     # Example of predicting the most representative word for a new article
     new_article = "Rohit Sharma, Virat Kohli announce retirement from T20 after world cup."
