@@ -539,12 +539,30 @@
                 <input type="text" name="chatInput" id="headlineInput" placeholder="Type The News Headline..." autocomplete="off" required="">
                 <button type="submit">Send Headline</button>
               </form>
+              {% if prediction_text %}
+              <h2>Prediction Result:</h2>
+              <p>{{ prediction_text|safe }}</p>
 
-              <!-- Second form for another purpose (e.g., detector) -->
-              <form action="/another_endpoint" method="POST" class="chat-form" id="detectorForm">
-                <input type="text" name="detectorInput" id="detectorInput" placeholder="Detector..." autocomplete="off" required="">
-                <button type="submit">Send Detector</button>
-              </form>
+              <h3>Similar Headlines:</h3>
+              <ul>
+              {% for title, score_dict in similarities %}
+                  <li>
+                      {{ title }} -
+                      <div class="similarity-score">
+                          <strong>Text similarity basic (TF-IDF):</strong> {{ score_dict['cosine_similarity_tfidf'] }} <br>
+                          <strong>String distance ratio:</strong> {{ score_dict['levenshtein_similarity'] }} <br>
+                          <strong>Semantic similarity model (BERT):</strong> {{ score_dict['cosine_similarity_bert'] }} <br>
+                          <strong>Combined similarity score:</strong> {{ score_dict['harmonic_mean'] }}
+                      </div>
+                  </li>
+              {% endfor %}
+              </ul>
+              {% endif %}
+
+              {% if error %}
+              <p class="error">{{ error }}</p>
+              {% endif %}
+              
             </div>
           </div>
           <footer class="chat-footer">
