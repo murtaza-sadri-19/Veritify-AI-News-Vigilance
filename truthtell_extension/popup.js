@@ -1,13 +1,9 @@
-document.addEventListener('DOMContentLoaded', () => {
-  const highlightButton = document.getElementById('highlightButton');
-  const keywordsInput = document.getElementById('keywordsInput');
-
-  highlightButton.addEventListener('click', () => {
-    const keywords = keywordsInput.value.split(',').map((keyword) => keyword.trim());
-
-    // Send the keywords to the content script
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      chrome.tabs.sendMessage(tabs[0].id, { action: 'highlight', keywords });
-    });
+document.getElementById('checkHistory').addEventListener('click', () => {
+  let historyDiv = document.getElementById('historyDiv');
+  chrome.storage.local.get('history', function(result) {
+      const history = result.history || [];
+      historyDiv.innerHTML = history.length > 0 ? 
+          history.map(item => `<button class="historyButton">${item.title}</button>`).join('') : 
+          '<p>No history available</p>';
   });
 });
