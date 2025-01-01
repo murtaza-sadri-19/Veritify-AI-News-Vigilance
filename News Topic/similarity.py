@@ -4,10 +4,10 @@ from difflib import SequenceMatcher
 from sentence_transformers import SentenceTransformer
 import numpy as np
 
-print("Enter the first paragraph:")
+print("Rohit Sharma joins virat kohli in India Test Cricket retirement after world cup.")
 para1 = input().strip()
 
-print("Enter the second paragraph:")
+print("Rohit Sharma, Virat Kohli announces retirement from T20")
 para2 = input().strip()
 
 # 1. Preprocessing and Cosine Similarity (TF-IDF)
