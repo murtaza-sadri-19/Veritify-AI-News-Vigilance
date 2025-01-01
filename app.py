@@ -1,8 +1,6 @@
-import asyncio
-from crawl4ai import AsyncWebCrawler  # Import Crawl4AI for web scraping
-from Prediction import load_model, predict_topic_words  # Import your Prediction module here
-from similarity import calculate_similarity  # Import similarity calculation function
-
+import httpx
+from Prediction import load_model, predict_topic_words
+from similarity import calculate_similarity
 from flask import Flask, request, render_template
 
 # Initialize Flask app
@@ -11,6 +9,19 @@ app = Flask(__name__)
 # Load models once when starting the app
 tfidf_vectorizer = load_model('News Proto/tfidf_vectorizer.pkl')  # Ensure correct path
 nmf_model = load_model('News Proto/nmf_model.pkl')  # Ensure correct path
+
+
+def google_search(api_key, search_engine_id, query, **params):
+    base_url = 'https://www.googleapis.com/customsearch/v1'
+    params = {
+        'key': 'AIzaSyC6oIUD2f1iuXGadfVPksbAQpHJSvcFtvk',
+        'cx': '5047be7447f514341',
+        'q': query,
+        **params
+    }
+    response = httpx.get(base_url, params=params)
+    response.raise_for_status()
+    return response.json()
 
 
 @app.route("/")
@@ -27,62 +38,53 @@ def about():
 def prediction():
     if request.method == "POST":
         news_headline = request.form['chatInput']
+        print("sent")  # Indicate that a submission has been received
 
-        # Print "sent" to the terminal when the form is submitted
-        print("sent")
-
-        # Use predict_topic_words function from Prediction.py
+        # Predict topics
         primary_topic, subtopics = predict_topic_words(news_headline, tfidf_vectorizer, nmf_model)
+        print(f"Predicted Topic: {primary_topic}")
+        print(f"Subtopics: {', '.join(subtopics)}")
 
-        # Scrape top 5 similar news headlines using Crawl4AI
-        similar_headlines = asyncio.run(scrape_similar_news(news_headline))
+        # Collect search results using Google Custom Search API
+        api_key = 'YOUR_API_KEY'  # Replace with your actual API key
+        search_engine_id = 'YOUR_SEARCH_ENGINE_ID'  # Replace with your actual search engine ID
 
-        # Print all scraped headlines
-        print("Top 5 Similar Headlines:")
-        for headline in similar_headlines:
-            print(headline)  # Print each headline
+        try:
+            response = google_search(api_key, search_engine_id, news_headline)
+            search_results = response.get('items', [])
+            if len(search_results) >= 5:  # Limit to top 5 results
+                search_results = search_results[:5]
 
-        # Calculate similarities between input and scraped headlines
-        similarities = []
-        for headline in similar_headlines:
-            score = calculate_similarity(news_headline, headline)
-            similarities.append((headline, score))
+            # Extract top titles and URLs
+            similar_headlines = [(result['title'], result['link']) for result in search_results]
+            print("Top 5 Similar Headlines:")
+            for title, url in similar_headlines:
+                print(f"Title: {title}, URL: {url}")  # Print each headline with its URL
+            print('ready for prediction')
+            # Calculate similarities between input and scraped headlines
+            similarities = []
+            for title, url in similar_headlines:
+                if title:  # Check if title is not empty or None
+                    score_dict = calculate_similarity(news_headline, title)  # Use title for similarity calculation
+                    similarities.append((title, score_dict))
+                else:
+                    print("Empty title found; skipping similarity calculation.")
+            print("Similarities:")
+            for title, score in similarities:
+                print(f"Title: {title}, Score: {score}")
 
-        # Return prediction result and similarities to main.html template
-        return render_template("main.html",
-                               prediction_text="Most representative word: {}<br>Subtopics: {}".format(primary_topic,
-                                                                                                      ', '.join(
-                                                                                                          subtopics)),
-                               similarities=similarities)
+            return render_template("main.html",
+                                   prediction_text="Most representative word: {}<br>Subtopics: {}".format(primary_topic,
+                                                                                                          ', '.join(
+                                                                                                              subtopics)),
+                                   similarities=similarities)
+
+        except Exception as e:
+            print(f"Error occurred during Google Search: {e}")
+            return render_template("main.html", error="An error occurred while fetching news articles.")
 
     else:
         return render_template("main.html")
-
-
-async def scrape_similar_news(query):
-    """
-    Scrapes the top 5 news headlines related to the query using Crawl4AI.
-
-    Args:
-        query (str): The search query for news headlines.
-
-    Returns:
-        list: A list of scraped news headlines.
-    """
-    async with AsyncWebCrawler() as crawler:
-        search_url = f"https://news.google.com/search?q={query.replace(' ', '%20')}&hl=en-US&gl=US&ceid=US%3Aen"
-
-        result = await crawler.arun(url=search_url)
-
-        # Extract headlines from the result (adjust based on actual HTML structure)
-        headlines = []
-
-        if hasattr(result, 'articles'):  # Check if 'articles' is a valid attribute
-            for article in result.articles[:5]:  # Assuming articles is a list
-                if 'title' in article:
-                    headlines.append(article['title'])
-
-        return headlines[:5]  # Return the top 5 headlines
 
 
 if __name__ == "__main__":
