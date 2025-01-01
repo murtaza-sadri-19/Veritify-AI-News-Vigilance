@@ -1,11 +1,16 @@
-// background.js
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.contextMenus.create({
+    id: "analyzeSelectedText",
+    title: "VerifyIt Selected Text",
+    contexts: ["selection"]
+  });
+});
 
-// Placeholder for future functionality
-console.log('TruthTell background script initialized');
-
-// Listen for popup interactions and manage state
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === 'log') {
-    console.log(message.text);
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  if (info.menuItemId === "analyzeSelectedText") {
+    chrome.tabs.sendMessage(tab.id, {
+      action: "analyzeSelectedText",
+      selectedText: info.selectionText
+    });
   }
 });
