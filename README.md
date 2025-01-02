@@ -1,253 +1,155 @@
 # **TruthTrack: AI Vigilance for Reliable Information**
 
-### Overview
-TruthTrack is an innovative project aimed at analyzing and categorizing news articles to enhance media literacy and combat misinformation. By utilizing advanced machine learning techniques, TruthTrack empowers users to evaluate the credibility of news sources and understand media biases, ultimately fostering a more informed society.
+## Overview
+TruthTrack provides a system for analyzing news article headlines by predicting their primary topic, identifying subtopics, and calculating similarity with other related headlines. The application is built using machine learning models for topic prediction and semantic similarity, integrated with Custom Search for fetching related headlines.
 
-### Key Features
-- **News Categorization**: Automatically classify news articles into relevant topics using Latent Dirichlet Allocation (LDA) and other machine learning models.
-- **Similarity Analysis**: Assess the similarity between different news articles, helping users identify related content and potential biases.
-- **Web Scraping**: Gather data from various news sources, including The Hindu and PolitiFact, to create a rich dataset for analysis.
-- **Interactive Visualizations**: Utilize Jupyter Notebooks for interactive exploration of data and model results, making it easier to understand complex relationships within the news.
+## Features
+1. **Topic Prediction**: Predicts the most representative word for the topic of a news headline along with relevant subtopics using NMF (Non-Negative Matrix Factorization) and TF-IDF.
+2. **Similarity Analysis**: Calculates similarity scores between the input headline and other headlines using multiple methods:
+   - Cosine Similarity (TF-IDF)
+   - Levenshtein Similarity
+   - Semantic Matching (Sentence Transformers)
+3. **Google Search Integration**: Fetches top 5 related headlines from the web using the Google Custom Search API.
+4. **Combined Similarity Score**: Aggregates similarity scores using the harmonic mean for better relevance analysis.
+5. **Web Application**: A Flask-based user interface for interacting with the system.
 
-### Directory Structure
-The project is organized as follows:
+---
 
-```
-Directory structure:
-└── murtaza-sadri-19-TruthTrack/
-    ├── Prediction.py
-    ├── demo.py
-    ├── google_search_results.csv
-    ├── app.py
-    ├── truthteller_application/
-    │   ├── .vscode/
-    │   │   ├── diff/
-    │   │   │   └── vulsCount.txt
-    │   │   └── settings.json
-    │   ├── linux/
-    │   │   ├── my_application.h
-    │   │   ├── .gitignore
-    │   │   ├── flutter/
-    │   │   │   ├── generated_plugins.cmake
-    │   │   │   ├── CMakeLists.txt
-    │   │   │   └── generated_plugin_registrant.h
-    │   │   └── CMakeLists.txt
-    │   ├── pubspec.lock
-    │   ├── .gitignore
-    │   ├── assets/
-    │   ├── ios/
-    │   │   ├── .gitignore
-    │   │   ├── Runner/
-    │   │   │   ├── AppDelegate.swift
-    │   │   │   ├── Base.lproj/
-    │   │   │   │   ├── Main.storyboard
-    │   │   │   │   └── LaunchScreen.storyboard
-    │   │   │   ├── Assets.xcassets/
-    │   │   │   │   ├── AppIcon.appiconset/
-    │   │   │   │   │   └── Contents.json
-    │   │   │   │   └── LaunchImage.imageset/
-    │   │   │   │       ├── README.md
-    │   │   │   │       └── Contents.json
-    │   │   │   ├── Runner-Bridging-Header.h
-    │   │   │   └── Info.plist
-    │   │   ├── Flutter/
-    │   │   │   ├── Debug.xcconfig
-    │   │   │   ├── Release.xcconfig
-    │   │   │   └── AppFrameworkInfo.plist
-    │   │   ├── Runner.xcodeproj/
-    │   │   │   ├── project.xcworkspace/
-    │   │   │   │   ├── contents.xcworkspacedata
-    │   │   │   │   └── xcshareddata/
-    │   │   │   │       ├── IDEWorkspaceChecks.plist
-    │   │   │   │       └── WorkspaceSettings.xcsettings
-    │   │   │   ├── project.pbxproj
-    │   │   │   └── xcshareddata/
-    │   │   │       └── xcschemes/
-    │   │   │           └── Runner.xcscheme
-    │   │   ├── Runner.xcworkspace/
-    │   │   │   ├── contents.xcworkspacedata
-    │   │   │   └── xcshareddata/
-    │   │   │       ├── IDEWorkspaceChecks.plist
-    │   │   │       └── WorkspaceSettings.xcsettings
-    │   │   └── RunnerTests/
-    │   │       └── RunnerTests.swift
-    │   ├── test/
-    │   │   └── widget_test.dart
-    │   ├── pubspec.yaml
-    │   ├── lib/
-    │   │   └── main.dart
-    │   ├── analysis_options.yaml
-    │   ├── windows/
-    │   │   ├── runner/
-    │   │   │   ├── utils.cpp
-    │   │   │   ├── win32_window.h
-    │   │   │   ├── utils.h
-    │   │   │   ├── win32_window.cpp
-    │   │   │   ├── flutter_window.h
-    │   │   │   ├── flutter_window.cpp
-    │   │   │   ├── CMakeLists.txt
-    │   │   │   ├── main.cpp
-    │   │   │   ├── Runner.rc
-    │   │   │   └── resource.h
-    │   │   ├── .gitignore
-    │   │   ├── flutter/
-    │   │   │   ├── generated_plugins.cmake
-    │   │   │   ├── CMakeLists.txt
-    │   │   │   └── generated_plugin_registrant.h
-    │   │   └── CMakeLists.txt
-    │   ├── macos/
-    │   │   ├── .gitignore
-    │   │   ├── Runner/
-    │   │   │   ├── AppDelegate.swift
-    │   │   │   ├── Base.lproj/
-    │   │   │   │   └── MainMenu.xib
-    │   │   │   ├── Configs/
-    │   │   │   │   ├── Debug.xcconfig
-    │   │   │   │   ├── Release.xcconfig
-    │   │   │   │   ├── Warnings.xcconfig
-    │   │   │   │   └── AppInfo.xcconfig
-    │   │   │   ├── Release.entitlements
-    │   │   │   ├── MainFlutterWindow.swift
-    │   │   │   ├── DebugProfile.entitlements
-    │   │   │   ├── Assets.xcassets/
-    │   │   │   │   └── AppIcon.appiconset/
-    │   │   │   │       └── Contents.json
-    │   │   │   └── Info.plist
-    │   │   ├── Flutter/
-    │   │   │   ├── GeneratedPluginRegistrant.swift
-    │   │   │   ├── Flutter-Debug.xcconfig
-    │   │   │   └── Flutter-Release.xcconfig
-    │   │   ├── Runner.xcodeproj/
-    │   │   │   ├── project.xcworkspace/
-    │   │   │   │   └── xcshareddata/
-    │   │   │   │       └── IDEWorkspaceChecks.plist
-    │   │   │   ├── project.pbxproj
-    │   │   │   └── xcshareddata/
-    │   │   │       └── xcschemes/
-    │   │   │           └── Runner.xcscheme
-    │   │   ├── Runner.xcworkspace/
-    │   │   │   ├── contents.xcworkspacedata
-    │   │   │   └── xcshareddata/
-    │   │   │       └── IDEWorkspaceChecks.plist
-    │   │   └── RunnerTests/
-    │   │       └── RunnerTests.swift
-    │   ├── android/
-    │   │   ├── .gitignore
-    │   │   └── app/
-    │   │       └── src/
-    │   │           ├── main/
-    │   │           │   ├── AndroidManifest.xml
-    │   │           │   ├── res/
-    │   │           │   │   ├── mipmap-mdpi/
-    │   │           │   │   ├── mipmap-xxxhdpi/
-    │   │           │   │   ├── mipmap-hdpi/
-    │   │           │   │   ├── mipmap-xxhdpi/
-    │   │           │   │   ├── drawable/
-    │   │           │   │   │   └── launch_background.xml
-    │   │           │   │   ├── mipmap-xhdpi/
-    │   │           │   │   ├── drawable-v21/
-    │   │           │   │   │   └── launch_background.xml
-    │   │           │   │   ├── values-night/
-    │   │           │   │   │   └── styles.xml
-    │   │           │   │   └── values/
-    │   │           │   │       └── styles.xml
-    │   │           │   └── kotlin/
-    │   │           │       └── com/
-    │   │           │           └── example/
-    │   │           │               └── flutter_application_1/
-    │   │           │                   └── MainActivity.kt
-    │   │           ├── debug/
-    │   │           │   └── AndroidManifest.xml
-    │   │           └── profile/
-    │   │               └── AndroidManifest.xml
-    │   ├── web/
-    │   │   ├── manifest.json
-    │   │   ├── index.html
-    │   │   └── icons/
-    │   ├── .metadata
-    │   └── README.md
-    ├── News Proto/
-    │   ├── PAM based model.ipynb
-    │   ├── nmf_model_params.json
-    │   ├── news.tsv
-    │   ├── news.zip
-    │   ├── tfidf_vectorizer.pkl
-    │   ├── news.csv
-    │   └── nmf_model.pkl
-    ├── truthtell_extension/
-    │   ├── manifest.json
-    │   ├── background.js
-    │   ├── popup.js
-    │   ├── content.js
-    │   ├── popup.html
-    │   ├── icons/
-    │   └── README.md
-    ├── requirements.txt
-    ├── News Topic/
-    │   ├── news_topic.zip
-    │   ├── lda_model.model.expElogbeta.npy
-    │   ├── News_Topic.md
-    │   ├── Similarity_news.ipynb
-    │   ├── lda_model.model.state
-    │   ├── lda_model.model
-    │   ├── lda_model.model.id2word
-    │   ├── categorized_news.zip
-    │   ├── .idea/
-    │   │   ├── Topic_Modelling_news.iml
-    │   │   ├── misc.xml
-    │   │   ├── .gitignore
-    │   │   ├── modules.xml
-    │   │   ├── workspace.xml
-    │   │   ├── inspectionProfiles/
-    │   │   │   └── profiles_settings.xml
-    │   │   └── jupyter-settings.xml
-    │   ├── lda_model1.json
-    │   ├── lda_model.json
-    │   ├── lda_dictionary.txt
-    │   ├── News_Topic.ipynb
-    │   └── News_Topic_.ipynb
-    ├── similarity.py
-    ├── Dataset/
-    │   ├── TheHinduCricket/
-    │   │   ├── Web_Scraping.ipynb
-    │   │   └── Web_Scrapping_Hindu.csv
-    │   ├── PolitiFact/
-    │   │   ├── FactChecker_Dataset.csv
-    │   │   └── ScrapCode.ipynb
-    │   ├── Web_Scrapping_factcheck.csv
-    │   ├── Web_Scrapping_Snopes.csv
-    │   └── cricket.ipynb
-    ├── News_Topic_.ipynb
-    ├── README.md
-    └── templates/
-        ├── index.html
-        └── main.html
-```
+## Tech Stack
+- **Backend**: Python, Flask
+- **Machine Learning**:
+  - **Topic Prediction**: TF-IDF, NMF (via `sklearn`)
+  - **Semantic Similarity**: Sentence Transformers (`all-MiniLM-L6-v2`)
+  - **Natural Languange Processing (NLP)**
+- **Frontend**: HTML, CSS (via Flask templates)
+- **Libraries**:
+  - `numpy`, `scikit-learn`, `sentence-transformers`, `difflib`, `httpx`
 
-### Installation Instructions
-To set up TruthTrack locally, follow these steps:
-1. Clone the repository:
+---
+
+## Installation and Setup
+
+### Prerequisites
+- Python 3.8 or above
+- Google Custom Search API credentials (API Key and Search Engine ID)
+
+### Steps
+1. **Clone the Repository**:
    ```bash
    git clone https://github.com/murtaza-sadri-19/TruthTrack.git
    cd TruthTrack
    ```
-2. Install the required packages:
+
+2. **Install Dependencies**:
    ```bash
    pip install -r requirements.txt
+   pip install sentence-transformers==3.3.1
+   pip install flask
    ```
 
-### Usage Guidelines
-To run the application, execute:
-```bash
-python app.py
-```
-Explore the capabilities of TruthTrack through the demo script or by interacting with the Jupyter Notebooks located in the `News Proto/` and `News Topic/` directories.
+3. **Run the Application**:
+   ```bash
+   python App.py
+   ```
 
-### Future Enhancements
-- **User Interface Improvements**: Enhance the web interface for a better user experience.
-- **Additional Data Sources**: Integrate more diverse news sources to broaden analysis.
-- **Advanced Analytics**: Implement deeper analytical features such as sentiment analysis.
+4. **Access the Application**:
+   Open your browser and navigate to `http://127.0.0.1:5000/`.
 
 ---
 
-TruthTrack is designed not only as a tool for analysis but also as an educational resource to promote understanding of media content. Join us in our mission to enhance media literacy!
+## File Structure
+```
+news-topic-prediction/
+|-- App.py                # Main Flask application
+|-- Prediction.py         # Topic prediction logic
+|-- similarity.py         # Similarity calculation methods
+|-- templates/
+|   |-- index.html        # Home page template
+|   |-- main.html         # Result and interaction page template
+|-- News Proto/
+|   |-- tfidf_vectorizer.pkl # Pre-trained TF-IDF vectorizer
+|   |-- nmf_model.pkl        # Pre-trained NMF model
+|-- static/               # CSS/JS files (if applicable)
+|-- requirements.txt      # Python dependencies
+|-- README.md             # Project documentation
+```
+
+---
+
+## Usage
+1. **Home Page**:
+   - Navigate to the home page and input your news headline.
+
+2. **Prediction and Results**:
+   - After submitting, the system predicts the primary topic and subtopics of the headline.
+   - Displays top 5 related headlines from World-Wide Searches.
+   - Shows detailed similarity scores for each headline, along with a combined similarity score.
+
+---
+
+## Key Components
+
+### Prediction
+- **`Prediction.py`**:
+  - Preprocesses the text (lowercasing, splitting).
+  - Uses TF-IDF vectorizer and NMF model to predict topics and extract the top words.
+
+### Similarity Analysis
+- **`similarity.py`**:
+  - Calculates:
+    - Cosine similarity using TF-IDF.
+    - Levenshtein similarity using `SequenceMatcher`.
+    - Semantic similarity using `sentence-transformers`.
+  - Combines these scores using a harmonic mean for better accuracy.
+
+### Search Integration
+- **`Search` function in `App.py`**:
+  - Fetches related headlines using Custom Search.
+
+---
+
+## Example Output
+### Input
+**Headline**: *"Rohit Sharma, Virat Kohli announce retirement from T20 after world cup."*
+
+### Output
+**Predicted Topic**: *"cricket"*  
+**Subtopics**: *"retirement, players"*
+
+**Top 5 Related Headlines**:
+1. Title: "Virat Kohli announces retirement from cricket."  
+   URL: *https://example.com/article1*
+2. Title: "Rohit Sharma speaks on retirement plans."  
+   URL: *https://example.com/article2*
+
+**Similarity Scores**:
+- Cosine Similarity (TF-IDF): 0.85
+- Levenshtein Similarity: 0.90
+- Semantic Similarity (BERT): 0.88
+
+**Combined Score**: 0.87
+
+---
+
+## Future Enhancements
+1. Extend topic prediction to support multi-label classification.
+2. Add support for more languages.
+3. Improve UI/UX for better user interaction.
+4. Enhance Custom Search integration with additional filters.
+
+---
+
+## Contributing
+We welcome contributions to this project! Please fork the repository and submit a pull request with your proposed changes.
+
+---
+
+## License
+This project is licensed under the MIT License. See the `LICENSE` file for more details.
+
+---
+
+## Acknowledgements
+- [Scikit-learn](https://scikit-learn.org/)
+- [Sentence Transformers](https://www.sbert.net/)
+
