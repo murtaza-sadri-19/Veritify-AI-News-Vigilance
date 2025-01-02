@@ -539,7 +539,7 @@
                 <input type="text" name="chatInput" id="headlineInput" placeholder="Type The News Headline..." autocomplete="off" required="">
                 <button type="submit">Send Headline</button>
               </form>
-              {% if prediction_text %}
+             {% if prediction_text %}
               <h2>Prediction Result:</h2>
               <p>{{ prediction_text|safe }}</p>
 
@@ -549,10 +549,17 @@
                   <li>
                       {{ title }} -
                       <div class="similarity-score">
+<<<<<<< HEAD
                           <strong>Cosine Similarity (TF-IDF):</strong> {{ score_dict['cosine_similarity_tfidf'] }} |
                           <strong>Levenshtein Similarity:</strong> {{ score_dict['levenshtein_similarity'] }} |
                           <strong>Cosine Similarity (BERT):</strong> {{ score_dict['cosine_similarity_bert'] }} |
                           <strong>Harmonic Mean:</strong> {{ score_dict['harmonic_mean'] }}
+=======
+                          <strong>Text similarity basic (TF-IDF):</strong> {{ score_dict['cosine_similarity_tfidf'] }} <br>
+                          <strong>String distance ratio:</strong> {{ score_dict['levenshtein_similarity'] }} <br>
+                          <strong>Semantic similarity model (BERT):</strong> {{ score_dict['cosine_similarity_bert'] }} <br>
+                          <strong>Combined similarity score:</strong> {{ score_dict['harmonic_mean'] }}
+>>>>>>> origin/Murtaza
                       </div>
                   </li>
               {% endfor %}
