@@ -60,24 +60,35 @@ def prediction():
             print("Top 5 Similar Headlines:")
             for title, url in similar_headlines:
                 print(f"Title: {title}, URL: {url}")  # Print each headline with its URL
-            print('ready for prediction')
+
             # Calculate similarities between input and scraped headlines
             similarities = []
+            harmonic_means = []  # To store harmonic means for aggregation
+
             for title, url in similar_headlines:
                 if title:  # Check if title is not empty or None
                     score_dict = calculate_similarity(news_headline, title)  # Use title for similarity calculation
                     similarities.append((title, score_dict))
+                    harmonic_means.append(score_dict['harmonic_mean'])  # Collect harmonic means
                 else:
                     print("Empty title found; skipping similarity calculation.")
+
             print("Similarities:")
             for title, score in similarities:
                 print(f"Title: {title}, Score: {score}")
+
+            # Calculate combined score as average of harmonic means
+            if harmonic_means:
+                combined_score = sum(harmonic_means) / 5
+            else:
+                combined_score = 0
 
             return render_template("main.html",
                                    prediction_text="Most representative word: {}<br>Subtopics: {}".format(primary_topic,
                                                                                                           ', '.join(
                                                                                                               subtopics)),
-                                   similarities=similarities)
+                                   similarities=similarities,
+                                   combined_score=combined_score)  # Pass combined score to template
 
         except Exception as e:
             print(f"Error occurred during Google Search: {e}")

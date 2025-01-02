@@ -46,6 +46,7 @@
     color: var(--text-light);
     display: flex;
     overflow: hidden;
+      text-align: justify-all;
   }
 
   .app-container {
@@ -517,6 +518,10 @@
     background: var(--primary-color);
     color: var(--text-dark);
   }
+
+        .similarity-score {
+            text-align: left; /* Aligns text to the left */
+        }
     </style>
   </head>
 
@@ -539,31 +544,29 @@
                 <input type="text" name="chatInput" id="headlineInput" placeholder="Type The News Headline..." autocomplete="off" required="">
                 <button type="submit">Send Headline</button>
               </form>
+                <br>
              {% if prediction_text %}
-              <h2>Prediction Result:</h2>
+              <h2>Prediction Result:</h2><br>
               <p>{{ prediction_text|safe }}</p>
 
-              <h3>Similar Headlines:</h3>
+              <br><h3>Similar Headlines:</h3><br>
               <ul>
               {% for title, score_dict in similarities %}
                   <li>
-                      {{ title }} -
                       <div class="similarity-score">
-<<<<<<< HEAD
-                          <strong>Cosine Similarity (TF-IDF):</strong> {{ score_dict['cosine_similarity_tfidf'] }} |
-                          <strong>Levenshtein Similarity:</strong> {{ score_dict['levenshtein_similarity'] }} |
-                          <strong>Cosine Similarity (BERT):</strong> {{ score_dict['cosine_similarity_bert'] }} |
-                          <strong>Harmonic Mean:</strong> {{ score_dict['harmonic_mean'] }}
-=======
+                          Headline : {{ title }}<br>
                           <strong>Text similarity basic (TF-IDF):</strong> {{ score_dict['cosine_similarity_tfidf'] }} <br>
                           <strong>String distance ratio:</strong> {{ score_dict['levenshtein_similarity'] }} <br>
                           <strong>Semantic similarity model (BERT):</strong> {{ score_dict['cosine_similarity_bert'] }} <br>
                           <strong>Combined similarity score:</strong> {{ score_dict['harmonic_mean'] }}
->>>>>>> origin/Murtaza
                       </div>
                   </li>
+                  <br>
               {% endfor %}
               </ul>
+
+            <h3>News Authenticity Score</h3>
+            <p>{{ combined_score|round(2) }}</p>
               {% endif %}
 
               {% if error %}

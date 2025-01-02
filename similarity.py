@@ -2,7 +2,10 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from difflib import SequenceMatcher
 from sentence_transformers import SentenceTransformer
-
+def safe_divide(a, b):
+    if b == 0:
+        return 0
+    return a / b
 def calculate_similarity(para1, para2):
     """
     Calculate various similarity metrics between two paragraphs.
@@ -34,7 +37,7 @@ def calculate_similarity(para1, para2):
     results['cosine_similarity_bert'] = bert_cosine_sim
 
     # 4. Harmonic Mean of All Similarity Measures
-    hm_all = 3 / (1/cosine_sim + 1/levenshtein_sim + 1/bert_cosine_sim)
+    hm_all = safe_divide(3 , (1/cosine_sim + 1/levenshtein_sim + 1/bert_cosine_sim))
     results['harmonic_mean'] = hm_all
 
     return results
