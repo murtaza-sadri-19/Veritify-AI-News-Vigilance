@@ -139,17 +139,4 @@ news-topic-prediction/
 
 ---
 
-## Contributing
-We welcome contributions to this project! Please fork the repository and submit a pull request with your proposed changes.
-
----
-
-## License
-This project is licensed under the MIT License. See the `LICENSE` file for more details.
-
----
-
-## Acknowledgements
-- [Scikit-learn](https://scikit-learn.org/)
-- [Sentence Transformers](https://www.sbert.net/)
-
+©2025 GS Geeks & Bits. All rights reserved.
