@@ -146,6 +146,7 @@ We welcome contributions to this project! Please fork the repository and submit 
 
 ## License
 This project is licensed under the MIT License. See the `LICENSE` file for more details.
+[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
 
 ---
 
