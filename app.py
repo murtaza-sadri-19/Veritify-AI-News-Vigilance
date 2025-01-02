@@ -79,7 +79,7 @@ def prediction():
 
             # Calculate combined score as average of harmonic means
             if harmonic_means:
-                combined_score = sum(harmonic_means) / 5
+                combined_score = 5 / sum(1 / x for x in harmonic_means if x)
             else:
                 combined_score = 0
 
