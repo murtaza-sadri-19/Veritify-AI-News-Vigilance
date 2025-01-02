@@ -36,8 +36,8 @@ TruthTrack provides a system for analyzing news article headlines by predicting 
 ### Steps
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/your-repository/news-topic-prediction.git
-   cd news-topic-prediction
+   git clone https://github.com/murtaza-sadri-19/TruthTrack.git
+   cd TruthTrack
    ```
 
 2. **Install Dependencies**:
