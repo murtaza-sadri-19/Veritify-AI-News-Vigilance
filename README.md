@@ -138,20 +138,3 @@ news-topic-prediction/
 4. Enhance Custom Search integration with additional filters.
 
 ---
-
-## Contributing
-We welcome contributions to this project! Please fork the repository and submit a pull request with your proposed changes.
-
----
-
-## License
-This project is licensed under the MIT License. See the `LICENSE` file for more details.
-
-[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
-
----
-
-## Acknowledgements
-- [Scikit-learn](https://scikit-learn.org/)
-- [Sentence Transformers](https://www.sbert.net/)
-
