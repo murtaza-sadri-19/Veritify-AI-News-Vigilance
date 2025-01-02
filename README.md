@@ -138,5 +138,3 @@ news-topic-prediction/
 4. Enhance Custom Search integration with additional filters.
 
 ---
-
-©2025 GS Geeks & Bits. All rights reserved.
