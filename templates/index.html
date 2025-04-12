@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}TruthTrack AI Vigilance - Fact Checker{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/results.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <h1>Verify the Truth with AI</h1>
+    <p>Enter a claim to check against reliable fact-checking sources</p>
+</section>
+
+<section class="verification-form">
+    <div class="form-container">
+        <div class="input-group">
+            <textarea id="claim-input" placeholder="Enter a claim to verify..."></textarea>
+        </div>
+        <button id="verify-button" class="btn primary">Verify Claim</button>
+    </div>
+</section>
+
+<section id="results-section" class="results-section">
+    <div id="result-container" class="result-container"></div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/verification.js') }}"></script>
+{% endblock %}
