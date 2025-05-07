@@ -6,6 +6,11 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
+RAPIDAPI_KEY = os.getenv("RAPIDAPI_KEY")
+REAL_TIME_NEWS_HOST = os.getenv("REAL_TIME_NEWS_HOST")
+MEDIA_BIAS_HOST = os.getenv("MEDIA_BIAS_HOST")
+FACT_CHECKER_HOST = os.getenv("FACT_CHECKER_HOST")
+GOOGLE_NEWS_HOST = os.getenv("GOOGLE_NEWS_HOST")
 app = Flask(__name__)
 fact_checker = FactCheckService()
 
