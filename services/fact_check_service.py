@@ -1,48 +1,66 @@
-import requests
-import json
 import os
+import requests
 from services.utils import sanitize_text
-
 
 class FactCheckService:
     def __init__(self):
-        # API keys for various fact-checking services
-        self.google_factcheck_api_key = os.getenv("GOOGLE_FACTCHECK_API_KEY")
-        self.factchecktools_api_key = os.getenv("FACTCHECKTOOLS_API_KEY")
+        # Load RapidAPI credentials and hosts from environment
+        self.rapidapi_key = os.getenv("RAPIDAPI_KEY")
+        self.real_time_news_host = os.getenv("REAL_TIME_NEWS_HOST")
+        self.media_bias_host = os.getenv("MEDIA_BIAS_HOST")
+        self.fact_checker_host = os.getenv("FACT_CHECKER_HOST")
+        self.google_news_host = os.getenv("GOOGLE_NEWS_HOST")
+
+        # Debug prints for environment variables
+        print("DEBUG: RAPIDAPI_KEY:", self.rapidapi_key)
+        print("DEBUG: REAL_TIME_NEWS_HOST:", self.real_time_news_host)
+        print("DEBUG: MEDIA_BIAS_HOST:", self.media_bias_host)
+        print("DEBUG: FACT_CHECKER_HOST:", self.fact_checker_host)
+        print("DEBUG: GOOGLE_NEWS_HOST:", self.google_news_host)
 
     def check_claim(self, claim_text):
         """
-        Check a claim against multiple fact-checking services.
+        Check a claim using multiple fact-checking and news APIs.
         Returns a consolidated result with sources and scores.
         """
-        # Sanitize the input text
         claim_text = sanitize_text(claim_text)
-
+        print(f"DEBUG: Sanitized claim_text: {claim_text}")
         results = []
 
         try:
-            # Try Google Fact Check API if we have an API key
-            if self.google_factcheck_api_key and self.google_factcheck_api_key != "your_google_api_key_here":
-                google_results = self._check_google_factcheck(claim_text)
-                if google_results:
-                    results.extend(google_results)
+            # Fact Checker API (RapidAPI)
+            fc_results = self._check_fact_checker_api(claim_text)
+            print(f"DEBUG: Fact Checker API returned {len(fc_results)} results")
+            if fc_results:
+                results.extend(fc_results)
 
-            # Try other fact-checking services
-            other_results = self._check_other_factcheck_service(claim_text)
-            if other_results:
-                results.extend(other_results)
+            # Media Bias Fact Check (RapidAPI)
+            mb_results = self._check_media_bias_api()
+            print(f"DEBUG: Media Bias API returned {len(mb_results)} results")
+            if mb_results:
+                results.extend(mb_results)
 
-            # If we can't connect to any services or no API keys, use mock data for demo
+            # Real-Time News Data (RapidAPI)
+            news_results = self._check_real_time_news_api()
+            print(f"DEBUG: Real-Time News API returned {len(news_results)} results")
+            if news_results:
+                results.extend(news_results)
+
+            # Google News (RapidAPI)
+            google_news_results = self._check_google_news_api()
+            print(f"DEBUG: Google News API returned {len(google_news_results)} results")
+            if google_news_results:
+                results.extend(google_news_results)
+
             if not results:
+                print("DEBUG: No API results, using mock results.")
                 results = self._get_mock_results(claim_text)
         except Exception as e:
             print(f"Error checking fact: {str(e)}")
-            # Return mock data in case of errors
             results = self._get_mock_results(claim_text)
 
-        # Calculate an overall trustworthiness score
         trustworthiness_score = self._calculate_score(results)
-
+        print(f"DEBUG: Calculated trustworthiness_score: {trustworthiness_score}")
         return {
             "verified": len(results) > 0,
             "score": trustworthiness_score,
@@ -50,103 +68,121 @@ class FactCheckService:
             "sources": results
         }
 
-    def _check_google_factcheck(self, claim_text):
-        """
-        Use Google's Fact Check Tools API to verify a claim
-        """
+    def _rapidapi_get(self, host, endpoint, params=None):
+        url = f"https://{host}{endpoint}"
+        headers = {
+            'x-rapidapi-key': self.rapidapi_key,
+            'x-rapidapi-host': host
+        }
+        print(f"DEBUG: Requesting {url} with params={params}")
+        response = requests.get(url, headers=headers, params=params)
+        print(f"DEBUG: Response status: {response.status_code}")
+        if response.status_code != 200:
+            print(f"DEBUG: Response text: {response.text}")
+        response.raise_for_status()
+        return response.json()
+
+    def _check_fact_checker_api(self, claim_text):
+        """Query Fact Checker API on RapidAPI."""
         try:
-            url = "https://factchecktools.googleapis.com/v1alpha1/claims:search"
-            params = {
-                "query": claim_text,
-                "key": self.google_factcheck_api_key
-            }
-
-            response = requests.get(url, params=params)
-
-            if response.status_code == 200:
-                data = response.json()
-                results = []
-
-                # Process claim review results
-                if "claims" in data:
-                    for claim in data["claims"]:
-                        for review in claim.get("claimReview", []):
-                            result = {
-                                "source": review.get("publisher", {}).get("name", "Unknown source"),
-                                "url": review.get("url", ""),
-                                "rating": review.get("textualRating", ""),
-                                "title": review.get("title", ""),
-                                "reviewDate": review.get("reviewDate", "")
-                            }
-                            results.append(result)
-
-                return results
-            else:
-                print(f"Google Fact Check API error: {response.status_code}")
-                return []
-
+            data = self._rapidapi_get(
+                self.fact_checker_host,
+                "/search",
+                params={"query": claim_text, "limit": 5, "offset": 0, "language": "en"}
+            )
+            print(f"DEBUG: Fact Checker API raw data: {data}")
+            results = []
+            for item in data.get("data", []):
+                results.append({
+                    "source": item.get("site_name", "Fact Checker"),
+                    "url": item.get("url", ""),
+                    "rating": item.get("claim_result", ""),
+                    "title": item.get("claim", ""),
+                    "reviewDate": item.get("date_published", "")
+                })
+            return results
         except Exception as e:
-            print(f"Error in Google fact check: {str(e)}")
+            print(f"Fact Checker API error: {str(e)}")
             return []
 
-    def _check_other_factcheck_service(self, claim_text):
-        """
-        Implementation for additional fact-checking services
-        Currently using Factcheck.org through a custom API approach
-        """
+    def _check_media_bias_api(self):
+        """Query Media Bias Fact Check API on RapidAPI."""
         try:
-            # This would be replaced with actual API call when available
-            # For example, using Factcheck.org content
-            url = "https://www.factcheck.org/wp-json/wp/v2/search"
-            params = {
-                "search": claim_text,
-                "per_page": 5,
-                "type": "post"
-            }
-
-            response = requests.get(url, params=params)
-
-            if response.status_code == 200:
-                data = response.json()
-                results = []
-
-                for item in data:
-                    # Get more details about the fact check
-                    if 'id' in item:
-                        post_url = f"https://www.factcheck.org/wp-json/wp/v2/posts/{item['id']}"
-                        post_response = requests.get(post_url)
-
-                        if post_response.status_code == 200:
-                            post_data = post_response.json()
-
-                            # Extract conclusion from content if possible
-                            content = post_data.get('content', {}).get('rendered', '')
-                            # Simple extraction - in a real implementation you'd want more sophisticated parsing
-                            conclusion = "See full analysis at the link"
-
-                            result = {
-                                "source": "FactCheck.org",
-                                "url": post_data.get('link', ''),
-                                "rating": conclusion,
-                                "title": post_data.get('title', {}).get('rendered', ''),
-                                "reviewDate": post_data.get('date', '')
-                            }
-                            results.append(result)
-
-                return results
-            else:
-                print(f"Factcheck.org API error: {response.status_code}")
-                return []
-
+            data = self._rapidapi_get(
+                self.media_bias_host,
+                "/fetch-data"
+            )
+            print(f"DEBUG: Media Bias API raw data: {data}")
+            results = []
+            for item in data.get("sources", [])[:3]:  # Limit to 3 for brevity
+                results.append({
+                    "source": item.get("source_name", "Media Bias Fact Check"),
+                    "url": item.get("source_url", ""),
+                    "rating": item.get("bias_rating", ""),
+                    "title": item.get("source_name", ""),
+                    "reviewDate": ""
+                })
+            return results
         except Exception as e:
-            print(f"Error in Factcheck.org check: {str(e)}")
+            print(f"Media Bias API error: {str(e)}")
+            return []
+
+    def _check_real_time_news_api(self):
+        """Query Real-Time News Data API on RapidAPI (Technology section as example)."""
+        try:
+            data = self._rapidapi_get(
+                self.real_time_news_host,
+                "/topic-news-by-section",
+                params={
+                    "topic": "TECHNOLOGY",
+                    "section": "",
+                    "limit": 5,
+                    "country": "US",
+                    "lang": "en"
+                }
+            )
+            print(f"DEBUG: Real-Time News API raw data: {data}")
+            results = []
+            for item in data.get("articles", [])[:3]:
+                results.append({
+                    "source": item.get("source", ""),
+                    "url": item.get("url", ""),
+                    "rating": "News Article",
+                    "title": item.get("title", ""),
+                    "reviewDate": item.get("publishedAt", "")
+                })
+            return results
+        except Exception as e:
+            print(f"Real-Time News API error: {str(e)}")
+            return []
+
+    def _check_google_news_api(self):
+        """Query Google News API on RapidAPI (Business section as example)."""
+        try:
+            data = self._rapidapi_get(
+                self.google_news_host,
+                "/business",
+                params={"lr": "en-US"}
+            )
+            print(f"DEBUG: Google News API raw data: {data}")
+            results = []
+            for item in data.get("articles", [])[:3]:
+                results.append({
+                    "source": item.get("source", ""),
+                    "url": item.get("url", ""),
+                    "rating": "News Article",
+                    "title": item.get("title", ""),
+                    "reviewDate": item.get("publishedAt", "")
+                })
+            return results
+        except Exception as e:
+            print(f"Google News API error: {str(e)}")
             return []
 
     def _get_mock_results(self, claim_text):
         """
         Return mock fact-check results for demonstration purposes
         """
-        # Analyze the claim text to adjust the response
         is_likely_political = any(word in claim_text.lower() for word in
                                   ["president", "government", "election", "congress", "democrat", "republican",
                                    "policy", "trump", "biden"])
@@ -208,37 +244,28 @@ class FactCheckService:
         if not results:
             return 0
 
-        # This is a simplified scoring algorithm that can be enhanced
-        # based on specific needs and available data from fact checkers
-
-        # Keyword-based analysis of ratings
         true_keywords = ['true', 'mostly true', 'correct', 'accurate']
         false_keywords = ['false', 'mostly false', 'incorrect', 'inaccurate', 'pants on fire']
         mixed_keywords = ['mixed', 'half true', 'partly']
 
-        # Count ratings
         total_ratings = len(results)
         true_ratings = sum(1 for r in results if any(kw in r.get("rating", "").lower() for kw in true_keywords))
         false_ratings = sum(1 for r in results if any(kw in r.get("rating", "").lower() for kw in false_keywords))
         mixed_ratings = sum(1 for r in results if any(kw in r.get("rating", "").lower() for kw in mixed_keywords))
 
-        # Default for unknown ratings
         unknown_ratings = total_ratings - true_ratings - false_ratings - mixed_ratings
 
-        # Calculate weighted score
         weighted_sum = (true_ratings * 100 + mixed_ratings * 50 + unknown_ratings * 50)
         base_score = weighted_sum / total_ratings if total_ratings > 0 else 50
 
-        # Apply confidence factor based on number of sources
         confidence = min(1.0, len(results) / 3.0)  # Max confidence with 3+ sources
 
         final_score = round(base_score * confidence)
 
-        # Adjust score down if there are explicit false ratings
         if false_ratings > 0:
             false_penalty = (false_ratings / total_ratings) * 40
             final_score = max(0, final_score - false_penalty)
-
+        print(f"DEBUG: Score calculation: true={true_ratings}, false={false_ratings}, mixed={mixed_ratings}, unknown={unknown_ratings}, final_score={final_score}")
         return round(final_score)
 
     def _generate_message(self, score):
