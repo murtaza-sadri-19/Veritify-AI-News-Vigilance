@@ -45,4 +45,4 @@ def verify_fact():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=0) #Automatically assign a available port
