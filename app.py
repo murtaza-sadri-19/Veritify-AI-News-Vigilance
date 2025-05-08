@@ -44,5 +44,14 @@ def verify_fact():
         }), 500
 
 
+@app.after_request
+def apply_security_headers(response):
+    """Add security headers to response"""
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    return response
+
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=0) #Automatically assign a available port
