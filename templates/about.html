@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}About TruthTrack AI Vigilance{% endblock %}
+
+{% block content %}
+<section class="about-section">
+    <h1>About TruthTrack AI Vigilance</h1>
+
+    <div class="info-card">
+        <h2>Our Mission</h2>
+        <p>TruthTrack AI Vigilance aims to combat misinformation by providing users with access to verified fact-checks
+            from reputable sources. We aggregate results from established fact-checking organizations to help you
+            determine the truthfulness of claims.</p>
+    </div>
+
+    <div class="info-card">
+        <h2>How It Works</h2>
+        <p>When you submit a claim, our system:</p>
+        <ol>
+            <li>Processes your claim to identify key facts and entities</li>
+            <li>Queries multiple fact-checking APIs and databases</li>
+            <li>Analyzes and aggregates the results from various sources</li>
+            <li>Calculates a truthfulness score based on available fact-checks</li>
+            <li>Presents you with verified information and links to original sources</li>
+        </ol>
+    </div>
+
+    <div class="info-card">
+        <h2>Our Sources</h2>
+        <p>We integrate with established fact-checking organizations, including:</p>
+        <ul>
+            <li>Google Fact Check Tools</li>
+            <li>FactCheck.org</li>
+            <li>PolitiFact</li>
+            <li>Snopes</li>
+            <li>Other reputable fact-checking sources</li>
+        </ul>
+    </div>
+
+    <div class="info-card">
+        <h2>Understanding Scores</h2>
+        <p>Our truthfulness scores range from 0-100:</p>
+        <ul>
+            <li><strong>80-100:</strong> Claim appears to be mostly true</li>
+            <li><strong>60-79:</strong> Claim contains some truth but may have inaccuracies</li>
+            <li><strong>40-59:</strong> Claim has mixed truthfulness</li>
+            <li><strong>20-39:</strong> Claim appears to be mostly false</li>
+            <li><strong>0-19:</strong> Claim is disputed or labeled as false</li>
+        </ul>
+    </div>
+</section>
+{% endblock %}
