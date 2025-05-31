@@ -56,7 +56,7 @@ pip install -r requirements.txt
 - Copy the example environment file and update it with your API keys:
 
 ```bash
-cp .env.example .env
+cp .env .env
 nano .env  # Edit with your preferred editor
 ```
 
