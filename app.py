@@ -1,48 +1,51 @@
-from flask import Flask, render_template, request, jsonify
-from services.fact_check_service import FactCheckService
 import os
-from dotenv import load_dotenv
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+import requests
 
-# Load environment variables
-load_dotenv()
+# Optional: import your own utils if needed
+# from .utils import sanitize_text, extract_entities
 
-app = Flask(__name__)
-fact_checker = FactCheckService()
+app = FastAPI()
 
+class ClaimRequest(BaseModel):
+    claim: str
 
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-
-@app.route('/about')
-def about():
-    return render_template('about.html')
-
-
-@app.route('/api/verify', methods=['POST'])
-def verify_fact():
-    data = request.get_json()
-
-    if not data or 'claim' not in data:
-        return jsonify({'success': False, 'error': 'No claim provided'}), 400
-
-    claim = data['claim']
-
-    try:
-        # Use our fact checking service
-        result = fact_checker.check_claim(claim)
-
-        return jsonify({
-            'success': True,
-            'result': result
-        })
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-
-if __name__ == '__main__':
-    app.run(debug=True)
+@app.post("/api/verify")
+async def verify_claim(request: ClaimRequest):
+    claim = request.claim.strip()
+    # Truncate claim for NewsData.io
+    truncated_claim = claim[:99]
+    newsdata_api_key = os.getenv("NEWSDATA_API_KEY")
+    newsdata_url = "https://newsdata.io/api/1/latest"
+    params = {
+        "apikey": newsdata_api_key,
+        "q": truncated_claim,
+        "language": "en"
+    }
+    newsdata_response = requests.get(newsdata_url, params=params)
+    newsdata_json = newsdata_response.json()
+    articles = newsdata_json.get("results", [])
+    if articles:
+        sources = [
+            {
+                "name": article.get("title", "News Article"),
+                "url": article.get("link", ""),
+                "date": article.get("pubDate", "")
+            }
+            for article in articles[:3]
+        ]
+        return {
+            "score": 50,
+            "message": "No definitive fact check found, but relevant news articles are available.",
+            "sources": sources,
+            "claim_text": claim
+        }
+    else:
+        return {
+            "score": None,
+            "message": "No fact check or relevant news found for this claim.",
+            "sources": [],
+            "claim_text": claim
+        }
