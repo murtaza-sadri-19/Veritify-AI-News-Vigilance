@@ -1,11 +1,7 @@
 import os
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import requests
-
-# Optional: import your own utils if needed
-# from .utils import sanitize_text, extract_entities
 
 app = FastAPI()
 
@@ -15,18 +11,28 @@ class ClaimRequest(BaseModel):
 @app.post("/api/verify")
 async def verify_claim(request: ClaimRequest):
     claim = request.claim.strip()
-    # Truncate claim for NewsData.io
     truncated_claim = claim[:99]
+
     newsdata_api_key = os.getenv("NEWSDATA_API_KEY")
+    if not newsdata_api_key:
+        raise HTTPException(status_code=500, detail="API key not configured")
+
     newsdata_url = "https://newsdata.io/api/1/latest"
     params = {
         "apikey": newsdata_api_key,
         "q": truncated_claim,
         "language": "en"
     }
-    newsdata_response = requests.get(newsdata_url, params=params)
-    newsdata_json = newsdata_response.json()
+
+    try:
+        newsdata_response = requests.get(newsdata_url, params=params, timeout=10)
+        newsdata_response.raise_for_status()
+        newsdata_json = newsdata_response.json()
+    except requests.RequestException as e:
+        raise HTTPException(status_code=502, detail=f"External API error: {str(e)}")
+
     articles = newsdata_json.get("results", [])
+
     if articles:
         sources = [
             {
@@ -49,3 +55,7 @@ async def verify_claim(request: ClaimRequest):
             "sources": [],
             "claim_text": claim
         }
+
+@app.get("/")
+async def root():
+    return {"message": "News verification API is running"}
