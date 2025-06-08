@@ -1,28 +1,15 @@
 services:
   - type: web
-    name: truthtrack
+    name: truthtrack-api
     env: python
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app
+    startCommand: python main.py
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.12.10
+      - key: "6701a4274emsh7a0d625386d78f2p1c5863jsn78f437bc6c76"
+        sync: false
       - key: FLASK_ENV
         value: production
-      - key: FLASK_APP
-        value: app
-      - key: SECRET_KEY
-        generateValue: true
-      - key: RAPIDAPI_KEY
-        sync: false
-      - key: NEWS_API_KEY
-        sync: false
-      - key: REAL_TIME_NEWS_HOST
-        value: real-time-news-data.p.rapidapi.com
-      - key: MEDIA_BIAS_HOST
-        value: media-bias-fact-check-ratings-api2.p.rapidapi.com
-      - key: FACT_CHECKER_HOST
-        value: fact-checker.p.rapidapi.com
-      - key: GOOGLE_NEWS_HOST
-        value: google-news13.p.rapidapi.com
+      - key: PORT
+        value: 5000
+    autoDeploy: true
