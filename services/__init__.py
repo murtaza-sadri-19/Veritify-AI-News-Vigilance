@@ -1,6 +1,4 @@
-# This file makes the services directory a Python package
-# It can be empty or can expose specific functionality
+from .fact_check_service import FactCheckService
+from .utils import sanitize_text, calculate_relevance_score
 
-from services.fact_check_service import FactCheckService
-
-__all__ = ['FactCheckService']
+__all__ = ['FactCheckService', 'sanitize_text', 'calculate_relevance_score']
