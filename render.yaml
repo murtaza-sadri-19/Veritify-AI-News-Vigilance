@@ -2,14 +2,22 @@ services:
   - type: web
     name: truthtrack-api
     env: python
-    plan: free
-    buildCommand: pip install -r requirements.txt
-    startCommand: python main.py
+    # Pin the Python version for consistent builds
+    pythonVersion: '3.11'
+    plan: free # Note: Free instances spin down after 15 mins of inactivity.
+    buildCommand: |
+      pip install --upgrade pip
+      pip install -r requirements.txt
+    # Use a production-grade WSGI server like Gunicorn
+    startCommand: gunicorn --workers 4 --bind 0.0.0.0:$PORT main:app
     envVars:
-      - key: "6701a4274emsh7a0d625386d78f2p1c5863jsn78f437bc6c76"
-        sync: false
+      - key: PYTHON_VERSION
+        value: '3.11'
       - key: FLASK_ENV
         value: production
-      - key: PORT
-        value: 5000
+      # This is a secret key. Set its value in the Render dashboard.
+      - key: "6701a4274emsh7a0d625386d78f2p1c5863jsn78f437bc6c76"
+        sync: false
+    # Helps Render detect successful deployments and restarts
+    healthCheckPath: /
     autoDeploy: true
