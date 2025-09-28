@@ -235,10 +235,10 @@ def calculate_relevance_score(claim: str, title: str, description: str = "", pub
 
     # Combine signals with weights; give semantic and recency higher importance
     # Weights sum to 1.0
-    w_sem = 0.5
-    w_kw = 0.2
-    w_ent = 0.1
-    w_rec = 0.2
+    w_sem = 0.65
+    w_kw = 0.05
+    w_ent = 0.05
+    w_rec = 0.25
     final_score = (
         w_sem * semantic_sim +
         w_kw * keyword_score +
