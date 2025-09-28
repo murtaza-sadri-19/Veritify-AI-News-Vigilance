@@ -1,6 +1,6 @@
 import re
 import html
-from typing import List, Set
+from typing import List
 from difflib import SequenceMatcher
 
 
@@ -105,60 +105,148 @@ def get_keywords(text: str, max_keywords: int = 10) -> List[str]:
     return [word for word, count in sorted_words[:max_keywords]]
 
 
-def calculate_relevance_score(claim: str, title: str, description: str = "") -> float:
+def calculate_relevance_score(claim: str, title: str, description: str = "", published: str = None) -> float:
     """
-    Calculate relevance score between a claim and news article
-    Returns score between 0.0 and 1.0
+    Calculate relevance score between a claim and news article using context-aware
+    semantic similarity combined with keyword and entity overlap. Returns score between 0.0 and 1.0.
     """
     if not claim or not title:
         return 0.0
 
-    # Normalize texts
-    claim_clean = sanitize_text(claim).lower()
-    title_clean = sanitize_text(title).lower()
-    desc_clean = sanitize_text(description).lower() if description else ""
+    claim_text = sanitize_text(claim)
+    article_text = sanitize_text(f"{title}. {description}")
 
-    # Get keywords from claim
-    claim_keywords = set(get_keywords(claim_clean, 15))
-
-    # Combine title and description for matching
-    article_text = f"{title_clean} {desc_clean}".strip()
+    # Prepare keyword and entity signals (lighter weight)
+    claim_keywords = set(get_keywords(claim_text, 15))
     article_keywords = set(get_keywords(article_text, 20))
+    keyword_score = 0.0
+    if claim_keywords:
+        common_keywords = claim_keywords.intersection(article_keywords)
+        keyword_score = len(common_keywords) / len(claim_keywords)
 
-    if not claim_keywords or not article_keywords:
-        # Fallback to basic string similarity
-        return SequenceMatcher(None, claim_clean, title_clean).ratio()
-
-    # Calculate keyword overlap
-    common_keywords = claim_keywords.intersection(article_keywords)
-    keyword_score = len(common_keywords) / len(claim_keywords) if claim_keywords else 0
-
-    # Calculate string similarity
-    title_similarity = SequenceMatcher(None, claim_clean, title_clean).ratio()
-
-    if desc_clean:
-        desc_similarity = SequenceMatcher(None, claim_clean, desc_clean).ratio()
-        string_similarity = max(title_similarity, desc_similarity)
-    else:
-        string_similarity = title_similarity
-
-    # Extract and compare entities
     claim_entities = set(extract_entities(claim))
-    article_entities = set(extract_entities(f"{title} {description}"))
-
+    article_entities = set(extract_entities(article_text))
     entity_score = 0.0
-    if claim_entities and article_entities:
+    if claim_entities:
         common_entities = claim_entities.intersection(article_entities)
-        entity_score = len(common_entities) / len(claim_entities)
+        entity_score = len(common_entities) / len(claim_entities) if claim_entities else 0.0
 
-    # Weighted combination of scores
-    relevance_score = (
-            keyword_score * 0.5 +  # Keywords are most important
-            string_similarity * 0.3 +  # Overall text similarity
-            entity_score * 0.2  # Named entity matching
+    # Semantic similarity (context-aware) - try sentence-transformers first, then spaCy vectors, else fallback
+    semantic_sim = 0.0
+
+    # Cached model holders
+    global _sem_model, _sem_model_type
+    try:
+        _sem_model
+    except NameError:
+        _sem_model = None
+        _sem_model_type = None
+
+    def _cosine(a, b):
+        try:
+            import numpy as _np
+            a = _np.array(a, dtype=float)
+            b = _np.array(b, dtype=float)
+            denom = (_np.linalg.norm(a) * _np.linalg.norm(b))
+            if denom == 0:
+                return 0.0
+            return float(_np.dot(a, b) / denom)
+        except Exception:
+            return 0.0
+
+    # Try sentence-transformers
+    if _sem_model_type is None:
+        try:
+            from sentence_transformers import SentenceTransformer
+            _sem_model = SentenceTransformer('all-MiniLM-L6-v2')
+            _sem_model_type = 'sbert'
+        except Exception:
+            # Try spaCy vectors
+            try:
+                import spacy
+                try:
+                    _sem_model = spacy.load('en_core_web_lg')
+                except Exception:
+                    _sem_model = spacy.load('en_core_web_sm')
+                _sem_model_type = 'spacy'
+            except Exception:
+                _sem_model = None
+                _sem_model_type = 'none'
+
+    try:
+        if _sem_model_type == 'sbert' and _sem_model:
+            emb_claim = _sem_model.encode([claim_text], convert_to_numpy=True)[0]
+            emb_article = _sem_model.encode([article_text], convert_to_numpy=True)[0]
+            semantic_sim = _cosine(emb_claim, emb_article)
+        elif _sem_model_type == 'spacy' and _sem_model:
+            doc1 = _sem_model(claim_text)
+            doc2 = _sem_model(article_text)
+            # spaCy .similarity may rely on word vectors; ensure non-zero
+            try:
+                semantic_sim = float(doc1.similarity(doc2))
+            except Exception:
+                semantic_sim = _cosine(doc1.vector, doc2.vector)
+        else:
+            semantic_sim = 0.0
+    except Exception:
+        semantic_sim = 0.0
+
+    # Normalize semantic_sim to [0,1]
+    if semantic_sim is None:
+        semantic_sim = 0.0
+    semantic_sim = max(0.0, min(1.0, semantic_sim))
+
+    # Recency signal (respect article dates) - optional, falls back to neutral
+    recency_score = 0.5
+    if published:
+        try:
+            from datetime import datetime
+            import math
+            # Try ISO parse first
+            try:
+                pub_dt = datetime.fromisoformat(published)
+            except Exception:
+                # Try common timestamp formats
+                formats = [
+                    "%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S",
+                    "%Y-%m-%d"
+                ]
+                pub_dt = None
+                for fmt in formats:
+                    try:
+                        pub_dt = datetime.strptime(published, fmt)
+                        break
+                    except Exception:
+                        continue
+            if pub_dt:
+                now = datetime.utcnow()
+                delta = now - pub_dt if now > pub_dt else pub_dt - now
+                days = delta.total_seconds() / 86400.0
+                # Exponential decay with configurable half-life-ish behavior
+                decay_days = float(os.getenv('NEWS_RECENCY_DECAY_DAYS', '14'))
+                recency_score = float(math.exp(-days / max(1.0, decay_days)))
+                # normalize to [0,1]
+                if recency_score < 0:
+                    recency_score = 0.0
+                if recency_score > 1:
+                    recency_score = 1.0
+        except Exception:
+            recency_score = 0.5
+
+    # Combine signals with weights; give semantic and recency higher importance
+    # Weights sum to 1.0
+    w_sem = 0.5
+    w_kw = 0.2
+    w_ent = 0.1
+    w_rec = 0.2
+    final_score = (
+        w_sem * semantic_sim +
+        w_kw * keyword_score +
+        w_ent * entity_score +
+        w_rec * recency_score
     )
 
-    return min(1.0, relevance_score)
+    return min(1.0, max(0.0, final_score))
 
 
 def truncate_text(text: str, max_length: int = 100) -> str:
