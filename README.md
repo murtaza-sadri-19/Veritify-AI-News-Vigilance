@@ -1,180 +1,284 @@
-# TruthTrack AI News Vigilance
+# TruthTrack - AI-Powered Fact Verification System
 
-TruthTrack AI News Vigilance is a web application designed to combat misinformation by allowing users to verify claims against reputable fact-checking sources. The platform provides trustworthiness scores and links to original fact-check sources to help users make informed judgments about the information they encounter.
+A full-stack web application that combines Flask backend with React frontend, featuring Firebase authentication and AI-powered news verification capabilities.
 
-![TruthTrack Logo](static/img/logo.png)
+## 🚀 Features
 
-## Features
+- **Firebase Authentication**: Secure user registration, login, and password reset
+- **AI Fact Checking**: Advanced claim verification using multiple news sources
+- **Modern React Frontend**: Responsive UI with TailwindCSS styling
+- **Real-time News Analysis**: Integration with news APIs for current information
+- **Contextual Scoring**: Advanced relevance scoring with semantic analysis
+- **Protected API Endpoints**: JWT-based authentication for secure access
 
-- Verify claims against multiple fact-checking sources
-- Get trustworthiness scores on a 0-100 scale
-- View detailed assessment with source information
-- Clean, responsive user interface
-- Real-time claim processing
-- Fallback mechanisms when no fact-checks are found
+## 🏗️ Architecture
 
-## Technologies Used
+### Backend (Flask)
+- **Framework**: Flask with Firebase Admin SDK
+- **Authentication**: Firebase ID token verification
+- **APIs**: RESTful endpoints for fact checking
+- **Services**: Modular fact-checking and news analysis services
 
-- **Backend**: Python 3.8+, Flask
-- **Frontend**: HTML5, CSS3, JavaScript
-- **APIs**: RapidAPI (Fact-Checker, Google News, Media Bias, Real-Time News)
-- **Database**: MongoDB (configured but optional)
-- **Environment**: python-dotenv for configuration
+### Frontend (React + TypeScript)
+- **Framework**: React 18 with TypeScript
+- **Styling**: TailwindCSS for modern, responsive design
+- **Authentication**: Firebase Auth SDK integration
+- **Routing**: React Router for SPA navigation
+- **State Management**: React Context API
 
-## Installation
+## 📋 Prerequisites
 
-### Prerequisites
+- Python 3.8+
+- Node.js 16+
+- Firebase Project (with Authentication enabled)
+- News API Key (RapidAPI)
 
-- Python 3.8 or higher
-- MongoDB (optional, for persistence)
-- RapidAPI subscription with access to fact-checking APIs
+## 🛠️ Setup Instructions
 
-### Setup
-
-1. **Clone the repository**
-
+### 1. Clone the Repository
 ```bash
-git clone https://github.com/yourusername/Truthtrack-AI-News-Vigilance.git
-cd Truthtrack-AI-News-Vigilance 
+git clone <repository-url>
+cd Truthtrack-AI-News-Vigilance
 ```
 
-2. **Create a virtual evironment**
+### 2. Backend Setup
 
+#### Install Python Dependencies
 ```bash
 python -m venv venv
-source venv/bin/activate  # On Windows, use: venv\Scripts\activate
-```
-
-3. **Install dependencies**
-
-```bash
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-4. **Configure environment variables**
-
-- Copy the example environment file and update it with your API keys:
-
+#### Configure Environment Variables
+Create a `.env` file in the root directory:
 ```bash
-cp .env .env
-nano .env  # Edit with your preferred editor
+cp .env.example .env
 ```
 
-5. **Run the application**
-
-The application will be available at http://localhost:5000 (or another port if configured differently).
-
-## Configuration
-
-- Create a .env file in the project root with the following variables:
-
-```py
-# App configuration
-FLASK_APP=app
+Edit `.env` with your configuration:
+```env
+# Flask Configuration
 FLASK_ENV=development
-SECRET_KEY=your_secret_key_here
-DEBUG=True
+SECRET_KEY=your-secret-key-here
 
-# MongoDB configuration (optional)
-MONGODB_URI=mongodb://localhost:27017/truthtrack
-MONGODB_DB=truthtrack
+# Firebase Configuration (Choose one method)
+# Method 1: Service Account Key File Path
+FIREBASE_SERVICE_ACCOUNT_KEY_PATH=path/to/serviceAccountKey.json
 
-# API Keys for fact checking services
-RAPIDAPI_KEY=your_rapid_api_key_here
-NEWS_API_KEY=your_news_api_key_here
+# Method 2: Service Account JSON (for production/Vercel)
+FIREBASE_SERVICE_ACCOUNT_JSON={"type": "service_account", "project_id": "your-project"}
 
-# RapidAPI hosts
-REAL_TIME_NEWS_HOST=real-time-news-data.p.rapidapi.com
-MEDIA_BIAS_HOST=media-bias-fact-check-ratings-api2.p.rapidapi.com
-FACT_CHECKER_HOST=fact-checker.p.rapidapi.com
-GOOGLE_NEWS_HOST=google-news13.p.rapidapi.com
+# News API Configuration
+NEWS_API_KEY=your-rapidapi-key-here
+NEWS_API_HOST=real-time-news-data.p.rapidapi.com
+NEWS_API_LIMIT=50
+NEWS_API_COUNTRY=US
+NEWS_API_LANG=en
+NEWS_RELEVANCE_THRESHOLD=0.25
+NEWS_SAMPLE_LIMIT=5
+
+# React App Firebase Configuration
+REACT_APP_FIREBASE_API_KEY=your-firebase-api-key
+REACT_APP_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+REACT_APP_FIREBASE_PROJECT_ID=your-project-id
+REACT_APP_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+REACT_APP_FIREBASE_MESSAGING_SENDER_ID=123456789
+REACT_APP_FIREBASE_APP_ID=1:123456789:web:abc123
 ```
-## Usage
 
-### Verifying Claims
-1. Navigate to the homepage
-2. Enter a claim in the input field
-3. Click "Verify Claim"
-4. View the results, including:
-    - Trustworthiness score
-    - Assessment message
-    - Source information
-    - Example Claims to Test
-    
-- Try verifying these sample claims:
+### 3. Frontend Setup
 
-"Drinking water cures cancer."
-"The Earth is flat."
-"COVID-19 vaccines contain microchips."
-"Exercise is good for heart health."
-"The United States presidential election was held in 2020."
+#### Install React Dependencies
+```bash
+cd client
+npm install
+```
 
-## API Documentation
+#### Build React App
+```bash
+npm run build
+```
 
-- Endpoints
+### 4. Firebase Configuration
 
-POST /api/verify
+#### Create Firebase Project
+1. Go to [Firebase Console](https://console.firebase.google.com/)
+2. Create a new project
+3. Enable Authentication with Email/Password
+4. Generate service account key:
+   - Go to Project Settings > Service Accounts
+   - Click "Generate new private key"
+   - Download the JSON file
 
-- Verifies a claim using fact-checking services.
+#### Configure Firebase Authentication
+1. In Firebase Console, go to Authentication > Settings
+2. Add your domain to authorized domains
+3. Configure sign-in methods (Email/Password)
 
-Request Body: 
+## 🚀 Running the Application
+
+### Development Mode
+
+#### Start React Development Server
+```bash
+cd client
+npm start
+```
+React app will run on `http://localhost:3000`
+
+#### Start Flask Backend
+```bash
+python main.py
+```
+Flask app will run on `http://localhost:5000`
+
+### Production Mode
+
+#### Build and Serve with Flask
+```bash
+# Build React app
+cd client
+npm run build
+cd ..
+
+# Start Flask server (serves React build)
+python main.py
+```
+Application will be available on `http://localhost:5000`
+
+## 📡 API Endpoints
+
+### Authentication Required Endpoints
+All API endpoints require Firebase ID token in Authorization header:
+```
+Authorization: Bearer <firebase-id-token>
+```
+
+### Available Endpoints
+
+#### POST `/api/verify`
+Verify a claim against news sources
 ```json
 {
-  "claim": "The claim text to verify"
+  "claim": "The claim to fact-check",
+  "api_key": "optional-openai-key"
 }
 ```
 
-Response: 
-
+#### GET `/api/health`
+Health check endpoint
 ```json
 {
-  "result": {
-    "score": 75,
-    "message": "This claim appears to be mostly accurate.",
-    "sources": [
-      {
-        "name": "Fact-Check Source Name",
-        "url": "https://source-url.com/article",
-        "date": "2023-05-15"
-      }
-    ],
-    "claim_text": "The original claim text"
-  }
+  "status": "healthy",
+  "service": "TruthTrack Fact-Check API",
+  "version": "2.0.0",
+  "firebase_enabled": true
 }
 ```
 
-### Status Codes:
+## 🎯 Usage
 
-1. 200 OK: Verification completed successfully
-2. 400 Bad Request: Missing or invalid claim
-3. 500 Internal Server Error: Error during verification process
+1. **Register/Login**: Create account or sign in with Firebase Auth
+2. **Verify Claims**: Enter claims in the dashboard to fact-check
+3. **Review Results**: Get credibility scores and source analysis
+4. **API Key**: Optionally provide OpenAI API key for enhanced analysis
 
-### Trustworthiness Scoring System
+## 🔧 Configuration Options
 
-TruthTrack uses a 0-100 scoring system to indicate the trustworthiness of claims:
+### News API Settings
+- `NEWS_API_LIMIT`: Maximum number of articles to fetch (default: 50)
+- `NEWS_RELEVANCE_THRESHOLD`: Minimum relevance score (0.0-1.0)
+- `NEWS_SAMPLE_LIMIT`: Number of sample articles to log
 
-- 80-100: Claim appears to be mostly true
-- 60-79: Claim contains some truth but may have inaccuracies
-- 40-59: Claim has mixed truthfulness
-- 20-39: Claim appears to be mostly false
-- 0-19: Claim is disputed or labeled as false
+### Scoring Weights
+The system uses weighted scoring:
+- Semantic relevance: 65%
+- Recency: 25%
+- Keywords: 5%
+- Named entities: 5%
 
-The scoring is determined by analyzing fact-check results from multiple sources and applying a weighted algorithm that considers the reputation of the source, the specificity of the fact-check, and other factors.
+## 🚀 Deployment
 
-### Error Handling
+### Vercel Deployment (Recommended)
+1. Build React app: `npm run build` in client directory
+2. Configure environment variables in Vercel dashboard
+3. Deploy Flask app with Vercel
+4. Set `FIREBASE_SERVICE_ACCOUNT_JSON` environment variable
 
-When fact-checking APIs are unavailable or return no results, the system implements a fallback mechanism:
+### Traditional Hosting
+1. Build React app for production
+2. Configure reverse proxy (nginx) to serve React and proxy API calls
+3. Set up production environment variables
+4. Deploy Flask app with gunicorn
 
-1. First attempts to use the dedicated fact-checking API
-2. If no results, tries Google News search for context
-3. If all else fails, provides a contextual assessment based on claim content
-4. Always indicates to the user when results are based on fallback mechanisms
+## 🛡️ Security
 
-## License
+- Firebase ID tokens for authentication
+- CORS configuration for cross-origin requests
+- Environment variable protection
+- Input validation and sanitization
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+## 📝 Development
 
-## Acknowledgments
+### Project Structure
+```
+├── main.py                 # Flask application
+├── requirements.txt        # Python dependencies
+├── .env.example           # Environment variables template
+├── client/                # React frontend
+│   ├── src/
+│   │   ├── components/    # React components
+│   │   ├── contexts/      # React contexts
+│   │   ├── services/      # Firebase services
+│   │   └── config/        # Configuration files
+│   └── package.json       # Node.js dependencies
+├── services/              # Backend services
+│   ├── fact_check_service.py
+│   ├── News_trace.py
+│   └── utils.py
+└── static/                # Legacy static files
+```
 
-- RapidAPI for providing fact-checking APIs
-- All the fact-checking organizations that make their data available
+### Adding New Features
+1. Backend: Add routes in `main.py`, implement services in `services/`
+2. Frontend: Add components in `client/src/components/`
+3. Update authentication as needed for new endpoints
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create feature branch: `git checkout -b feature/new-feature`
+3. Commit changes: `git commit -am 'Add new feature'`
+4. Push to branch: `git push origin feature/new-feature`
+5. Submit pull request
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+## 🆘 Troubleshooting
+
+### Common Issues
+
+1. **Firebase Authentication Errors**
+   - Verify Firebase configuration in `.env`
+   - Check service account key permissions
+   - Ensure Authentication is enabled in Firebase Console
+
+2. **CORS Errors**
+   - Verify CORS configuration in Flask app
+   - Check allowed origins in production
+
+3. **Build Errors**
+   - Ensure Node.js and Python versions are compatible
+   - Clear npm/pip cache if needed
+
+### Getting Help
+- Check the GitHub issues for known problems
+- Review Firebase documentation
+- Verify API key configurations
+
+---
+
+Built with ❤️ using Flask, React, and Firebase
