@@ -11,5 +11,3 @@ truthtell-b2bc3-firebase-adminsdk-fbsvc-4e038b47ab.json
 .env
 node_modules/
 .env.example
-.package-lock.json
-client/node_modules/
