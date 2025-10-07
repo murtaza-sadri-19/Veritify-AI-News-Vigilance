@@ -74,14 +74,18 @@ const Dashboard: React.FC = () => {
   };
 
   const getScoreColor = (score: number) => {
-    if (score >= 0.7) return 'text-green-600';
-    if (score >= 0.4) return 'text-yellow-600';
+    // Backend sends 0-100, normalize to 0-1 for comparison
+    const normalizedScore = score > 1 ? score / 100 : score;
+    if (normalizedScore >= 0.7) return 'text-green-600';
+    if (normalizedScore >= 0.4) return 'text-yellow-600';
     return 'text-red-600';
   };
 
   const getScoreBg = (score: number) => {
-    if (score >= 0.7) return 'bg-green-100';
-    if (score >= 0.4) return 'bg-yellow-100';
+    // Backend sends 0-100, normalize to 0-1 for comparison
+    const normalizedScore = score > 1 ? score / 100 : score;
+    if (normalizedScore >= 0.7) return 'bg-green-100';
+    if (normalizedScore >= 0.4) return 'bg-yellow-100';
     return 'bg-red-100';
   };
 
@@ -183,7 +187,8 @@ const Dashboard: React.FC = () => {
                       Credibility Score
                     </span>
                     <span className={`text-lg font-bold ${getScoreColor(result.score)}`}>
-                      {Math.round(result.score * 100)}%
+                      {/* Backend sends 0-100, display as-is */}
+                      {Math.round(result.score > 1 ? result.score : result.score)}%
                     </span>
                   </div>
                 </div>

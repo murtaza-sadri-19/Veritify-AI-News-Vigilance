@@ -16,12 +16,10 @@ load_dotenv()
 def initialize_firebase():
     """Initialize Firebase Admin SDK"""
     if not firebase_admin._apps:
-        # For production, use service account from environment variable
         service_account_path = os.getenv('FIREBASE_SERVICE_ACCOUNT_KEY_PATH')
         if service_account_path and os.path.exists(service_account_path):
             cred = credentials.Certificate(service_account_path)
         else:
-            # Alternative: Use service account JSON from environment variable
             service_account_json = os.getenv('FIREBASE_SERVICE_ACCOUNT_JSON')
             if service_account_json:
                 try:
@@ -33,9 +31,9 @@ def initialize_firebase():
             else:
                 print("Warning: Firebase credentials not configured")
                 return None
-
+        
         firebase_admin.initialize_app(cred)
-
+    
     return True
 
 # Initialize Firebase
@@ -43,8 +41,13 @@ firebase_initialized = initialize_firebase()
 
 # ── Flask App Setup ───────────────────────────────────────────────
 app = Flask(__name__, static_folder='client/build/static', template_folder='client/build')
-CORS(app, origins=["http://localhost:3000"])  # Allow React dev server
+CORS(app, origins=["http://localhost:3000"])
+
+# PERFORMANCE FIX: Initialize FactCheckService once at startup
+# This pre-loads the semantic model, making all subsequent requests fast
+print("🚀 Initializing Fact Check Service...")
 fact_check_service = FactCheckService()
+print("✅ Fact Check Service ready - semantic model loaded")
 
 # ── Authentication Middleware ─────────────────────────────────────
 def verify_firebase_token(f):
@@ -53,13 +56,13 @@ def verify_firebase_token(f):
     def decorated_function(*args, **kwargs):
         if not firebase_initialized:
             return jsonify({"error": "Firebase not configured"}), 500
-
+            
         auth_header = request.headers.get('Authorization')
         if not auth_header or not auth_header.startswith('Bearer '):
             return jsonify({"error": "Missing or invalid Authorization header"}), 401
-
+        
         token = auth_header[7:]  # Remove 'Bearer ' prefix
-
+        
         try:
             decoded_token = firebase_auth.verify_id_token(token)
             request.user = decoded_token
@@ -68,7 +71,7 @@ def verify_firebase_token(f):
             return jsonify({"error": f"Invalid token: {str(e)}"}), 401
         except Exception as e:
             return jsonify({"error": "Token verification failed"}), 401
-
+    
     return decorated_function
 
 
@@ -86,15 +89,13 @@ def verify_claim():
         if not claim:
             return jsonify({"error": "Claim cannot be empty"}), 400
 
-        # Get optional user API key
-        user_api_key = data.get("api_key")
-
+        # Process claim
         result = fact_check_service.check_claim(claim)
 
         return jsonify({
             "success": True,
             "result": result,
-            "user_id": request.user.get('uid')  # Include user ID for logging
+            "user_id": request.user.get('uid')
         })
 
     except Exception as e:
@@ -112,7 +113,8 @@ def health_check():
         "status": "healthy",
         "service": "TruthTrack Fact-Check API",
         "version": "2.0.0",
-        "firebase_enabled": firebase_initialized
+        "firebase_enabled": firebase_initialized,
+        "model_loaded": True
     })
 
 
@@ -121,28 +123,23 @@ def health_check():
 @app.route('/<path:path>')
 def serve_react_app(path):
     """Serve React app for all non-API routes"""
-    # Skip API routes
     if path.startswith('api/'):
         return jsonify({"error": "API endpoint not found"}), 404
-
-    # Check if static file exists
+    
     if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
         return send_from_directory(app.static_folder, path)
     else:
-        # Serve React index.html for all other routes (SPA routing)
         try:
             return render_template('index.html')
         except:
-            # Fallback to original template if React build not available
             return render_template('index.html', react_mode=False)
 
 
-# Legacy routes for backward compatibility
 @app.route("/about")
 def about():
     """Serve the about page"""
     try:
-        return render_template('index.html')  # Let React handle routing
+        return render_template('index.html')
     except:
         return render_template("about.html")
 
@@ -151,4 +148,14 @@ def about():
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
     debug_mode = os.getenv("FLASK_ENV") != "production"
+    
+    print(f"""
+    ╔════════════════════════════════════════════╗
+    ║   TruthTrack Fact-Check API Server        ║
+    ║   Running on port {port}                      ║
+    ║   Semantic model: LOADED ✓                ║
+    ║   Firebase auth: {'ENABLED ✓' if firebase_initialized else 'DISABLED ✗'}           ║
+    ╚════════════════════════════════════════════╝
+    """)
+    
     app.run(host="0.0.0.0", port=port, debug=debug_mode)

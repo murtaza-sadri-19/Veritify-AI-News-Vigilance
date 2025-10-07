@@ -27,5 +27,5 @@ class NewsRelevanceCalculator:
         bert_score = np.dot(claim_embedding, news_embedding) / (np.linalg.norm(claim_embedding) * np.linalg.norm(news_embedding))
 
         # Combine scores (weighted average)
-        combined_score = (0.3 * levenshtein_score) + (0.3 * cosine_score) + (0.4 * bert_score)
+        combined_score = (0.33 * levenshtein_score) + (0.33 * cosine_score) + (0.33 * bert_score)
         return combined_score
