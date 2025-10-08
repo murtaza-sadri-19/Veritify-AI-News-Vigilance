@@ -43,7 +43,7 @@ firebase_initialized = initialize_firebase()
 
 # ── Flask App Setup ───────────────────────────────────────────────
 app = Flask(__name__, static_folder='client/build/static', template_folder='client/build')
-CORS(app, origins=["http://localhost:3000"])  # Allow React dev server
+CORS(app, origins=["http://localhost:3000", "http://localhost:5173", "http://localhost:5000"])  # Allow React dev server and Vite
 fact_check_service = FactCheckService()
 
 # ── Authentication Middleware ─────────────────────────────────────
