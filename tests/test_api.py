@@ -1,7 +1,7 @@
 import pytest
 import json
 from unittest.mock import patch, Mock
-from main import create_app
+from app.backend.main import create_app
 
 
 @pytest.fixture

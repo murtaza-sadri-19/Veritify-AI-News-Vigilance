@@ -1,5 +1,6 @@
 import os
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify
+from flask_cors import CORS # <--- NEW IMPORT
 from dotenv import load_dotenv
 from services import FactCheckService
 
@@ -8,6 +9,7 @@ load_dotenv()
 
 # ── Flask App Setup ───────────────────────────────────────────────
 app = Flask(__name__)
+CORS(app) # <--- Enable CORS for the React frontend
 fact_check_service = FactCheckService()
 
 
@@ -49,21 +51,9 @@ def health_check():
     })
 
 
-# ── HTML Routes (Optional Pages) ──────────────────────────────────
-@app.route("/")
-def root():
-    """Serve the main HTML interface"""
-    return render_template("index.html")
-
-
-@app.route("/about")
-def about():
-    """Serve the about page"""
-    return render_template("about.html")
-
-
 # ── App Entry Point ───────────────────────────────────────────────
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
-    debug_mode = os.getenv("FLASK_ENV") != "production"
+    # It's generally best practice to use 'production' for FLASK_ENV in a deployment setting
+    debug_mode = os.getenv("FLASK_ENV") != "production" 
     app.run(host="0.0.0.0", port=port, debug=debug_mode)
