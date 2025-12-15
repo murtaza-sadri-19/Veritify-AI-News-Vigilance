@@ -16,12 +16,8 @@ import logging
 import re
 import sys
 from typing import Dict, List, Optional, Tuple
-
-# Core NLP libraries
 import spacy
 from spacy.lang.en.stop_words import STOP_WORDS
-
-# Advanced classification
 from transformers import pipeline
 import warnings
 warnings.filterwarnings("ignore")
