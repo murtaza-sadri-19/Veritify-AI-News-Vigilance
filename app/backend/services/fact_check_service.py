@@ -1,227 +1,277 @@
 import logging
-import http.client
-import json
 import os
-import urllib.parse
-from typing import Dict, Optional, Any
-from datetime import datetime, timedelta, timezone
-from .utils.text import sanitize_text, truncate_text
-from .relevance.scorer import NewsRelevanceCalculator
+from typing import Dict, Optional, Any, List
+
+from .utils.text import sanitize_text
 from .analysis.article_analyzer import NewsArticleAnalyzer
 from .news_fetcher import NewsFetcher
+from .relevance.scorer import RelevanceAndEntailmentScorer
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+
+def classify_claim_type(claim: str) -> str:
+    """
+    Very lightweight claim-type classifier.
+    Returns: FACTUAL | OPINION | PREDICTIVE
+    """
+    text = claim.lower()
+    if any(
+        kw in text
+        for kw in [
+            "i think",
+            "in my opinion",
+            "should",
+            "must",
+            "better",
+            "worse",
+            "good",
+            "bad",
+        ]
+    ):
+        return "OPINION"
+    if any(
+        kw in text
+        for kw in [
+            "will happen",
+            "is going to happen",
+            "likely to",
+            "expected to",
+            "forecast",
+            "prediction",
+        ]
+    ):
+        return "PREDICTIVE"
+    return "FACTUAL"
+
+
 class FactCheckService(NewsFetcher):
-    """Service for fact-checking claims using RapidAPI services"""
+    """Core orchestrator for fact-checking pipeline."""
 
     def __init__(self):
-        # Call parent init
         super().__init__()
-        
-        self.rapidapi_key = os.getenv("NEWS_API_KEY")  # Replace with your actual RapidAPI key
+        self.rapidapi_key = os.getenv("NEWS_API_KEY")
         self.article_analyzer = NewsArticleAnalyzer()
+        self.scorer = RelevanceAndEntailmentScorer()
 
-        if not self.rapidapi_key or self.rapidapi_key == "":
-            logger.warning("RAPIDAPI_KEY not configured - service will return mock responses")
+        if not self.rapidapi_key:
+            logger.warning("NEWS_API_KEY not configured - service will return mock responses")
 
-        # Configurable news API parameters (avoid hardcoding)
-        self.news_api_host = os.getenv("NEWS_API_HOST", "real-time-news-data.p.rapidapi.com")
-        self.news_api_limit = int(os.getenv("NEWS_API_LIMIT", "50"))
-        self.news_api_country = os.getenv("NEWS_API_COUNTRY", "US")
-        self.news_api_lang = os.getenv("NEWS_API_LANG", "en")
-        # Optional section/topic (if provided, will be used instead of free-text search)
-        self.news_api_section = os.getenv("NEWS_API_SECTION", "")
-        # Top-K ranking: number of top articles to consider (instead of threshold)
-        try:
-            self.top_k_articles = int(os.getenv("NEWS_TOP_K_ARTICLES", "5"))
-        except ValueError:
-            self.top_k_articles = 5
-        # Limit number of sample articles logged
-        self.sample_article_limit = int(os.getenv("NEWS_SAMPLE_LIMIT", "5"))
-        # Scoring weights (configurable for credibility and relevance)
-        try:
-            self.weight_relevance = float(os.getenv("SCORE_WEIGHT_RELEVANCE", "0.4"))
-            self.weight_credibility = float(os.getenv("SCORE_WEIGHT_CREDIBILITY", "0.6"))
-        except ValueError:
-            self.weight_relevance = 0.4
-            self.weight_credibility = 0.6
+    # ── Public API ────────────────────────────────────────────────
 
-    def check_claim(self, claim: str) -> Dict[str, Any]:
+    def check_claim(self, claim: str, context) -> Dict[str, Any]:
         """
-        Check a claim against news sources and fact-checking databases
-
-        Args:
-            claim: The claim to verify
-
-        Returns:
-            Dictionary containing score, message, sources, and claim_text
+        Orchestrate claim checking.
+        Accepts and populates RequestContext. Never recomputes embeddings here.
         """
         clean_claim = sanitize_text(claim)
-        debug_info = {}
+        context.claim_text = clean_claim
+        context.claim_type = classify_claim_type(clean_claim)
 
-        logger.info(f"Checking claim: {clean_claim[:100]}...")
+        debug_info: Dict[str, Any] = {}
+        context.debug = debug_info
 
-        if not self.rapidapi_key or self.rapidapi_key == "your_rapidapi_key_here":
+        logger.info("="*80)
+        logger.info(f"[CLAIM] {clean_claim[:150]}")
+        logger.info(f"[TYPE] {context.claim_type}")
+        logger.info("="*80)
+
+        if not self.rapidapi_key:
             logger.warning("No API key configured, returning mock response")
-            return self._generate_mock_response(clean_claim)
+            return self._generate_non_factual_or_mock_response(clean_claim, context)
 
-        # First, try the dedicated fact-checker API
+        # Step 1: fetch fact-check results
+        logger.info("[STEP 1] Searching fact-checker APIs...")
         fact_check_results = self._search_fact_checker_api(clean_claim, debug_info)
+        if fact_check_results:
+            logger.info(f"  → Found {len(fact_check_results.get('results', []))} fact-check results")
+        else:
+            logger.info("  → No fact-check results")
 
-        # Then, search real-time news for additional context
-        news_results = self._search_realtime_news_api(clean_claim, debug_info)
+        # Step 2: fetch candidate news articles (two-stage within NewsFetcher)
+        logger.info("[STEP 2] Fetching news articles...")
+        news_results = self._search_realtime_news_api(clean_claim, context, debug_info)
 
-        # Combine results
-        if fact_check_results or news_results:
-            logger.info("API returned results")
-            combined_results = self._combine_results(fact_check_results, news_results, clean_claim)
-            combined_results['debug'] = debug_info
-            return combined_results
+        # If not factual, skip entailment, return contextual only
+        if context.claim_type != "FACTUAL":
+            logger.warning(f"[SKIP] Non-factual claim ({context.claim_type}); skipping entailment")
+            return self._build_contextual_only_response(
+                clean_claim,
+                fact_check_results,
+                news_results,
+                context,
+            )
 
-        # No results found
-        logger.info("No relevant information found for claim")
-        response = self._generate_no_results_response(clean_claim)
-        response['debug'] = debug_info
+        # Factual: run semantic + entailment pipeline, respecting error boundaries
+        articles_meta = (news_results or {}).get("articles") or []
+        article_texts = [
+            f"{a.get('title', '')}. {a.get('snippet', '')}".strip()
+            for a in articles_meta
+        ]
+        logger.info(f"[STEP 3] Processing {len(article_texts)} articles for entailment analysis...")
+
+        verdict_payload: Dict[str, Any]
+        try:
+            # Semantic alignment (batch)
+            logger.info("  → Running semantic similarity scoring (MPNet)...")
+            self.scorer.batch_semantic_mpnet(context, clean_claim, article_texts)
+            candidate_indices = context.candidate_indices or self.scorer.get_semantic_candidates(
+                context, article_texts
+            )
+            logger.info(f"  → Selected {len(candidate_indices)} semantically-similar articles for entailment")
+
+            # Entailment (batch) with graceful downgrade on failure
+            logger.info("  → Running entailment classification (BART-MNLI)...")
+            self.scorer.run_entailment(
+                context,
+                clean_claim,
+                article_texts,
+                candidate_indices,
+            )
+            labels = context.entailment_labels or []
+            confs = context.entailment_confidences or []
+            if labels:
+                for idx, (label, conf) in enumerate(zip(labels, confs)):
+                    logger.info(f"    Article {idx+1}: {label} (confidence: {conf:.2%})")
+            
+            logger.info("  → Aggregating verdict from entailment signals...")
+            verdict_payload = self.scorer.aggregate_verdict(context)
+            logger.info(f"[VERDICT] {verdict_payload['verdict']} (confidence: {verdict_payload['confidence']:.2%})")
+        except Exception as e:
+            # Error boundary: downgrade to semantic-only
+            logger.error(f"Entailment pipeline failed, downgrading to semantic-only: {e}")
+            context.verdict = "INSUFFICIENT"
+            context.confidence = 0.0
+            verdict_payload = {"verdict": "INSUFFICIENT", "confidence": 0.0}
+            logger.warning(f"[VERDICT] INSUFFICIENT (error occurred)")
+
+        evidence = self._build_evidence(articles_meta, context)
+        logger.info(f"[EVIDENCE] Built {len(evidence)} evidence items")
+        logger.info("="*80)
+        response = {
+            "verdict": verdict_payload["verdict"],
+            "confidence": verdict_payload["confidence"],
+            "evidence": evidence,
+            "claim_text": clean_claim,
+        }
         return response
 
-    def _combine_results(self, fact_check_results: Optional[Dict],
-                         news_results: Optional[Dict], claim: str) -> Dict[str, Any]:
-        """Combine results from both APIs into a unified response, including advanced news analysis"""
-        sources = []
-        total_articles = 0
-        fact_check_score = None
-        
-        logger.info(f"Combining results for claim: '{claim[:80]}'")
-        logger.debug(f"Fact-check results available: {bool(fact_check_results)}")
-        logger.debug(f"News results available: {bool(news_results)}")
-        
-        if fact_check_results and 'results' in fact_check_results:
-            logger.info(f"Found {len(fact_check_results['results'])} fact-check results")
-            for result in fact_check_results['results'][:5]:
-                sources.append({
-                    "name": result.get('title', 'Fact Check Result'),
-                    "url": result.get('url', ''),
-                    "date": result.get('date', ''),
-                    "source": result.get('source', 'fact-checker'),
-                    "relevance": result.get('score', 0.8),
-                    "type": "fact-check"
-                })
-            if fact_check_results.get('results'):
-                fact_check_score = 80
-        else:
-            logger.debug("No fact-check results found")
-            
-        news_score = None
-        if news_results and news_results.get('articles'):
-            total_articles = news_results.get('total_found', 0)
-            relevant_count = len(news_results.get('articles', []))
-            logger.info(f"Found {relevant_count} relevant news articles out of {total_articles} total (top-{news_results.get('relevant_count', relevant_count)} ranked)")
-            
-            for idx, item in enumerate(news_results['articles'][:5]):
-                article = item.get('article', {})
-                relevance = item.get('relevance', 0.0)
-                sources.append({
-                    "name": article.get('title', 'News Article'),
-                    "url": article.get('url', ''),
-                    "date": article.get('published_datetime_utc', ''),
-                    "source": article.get('source_name', 'news'),
-                    "relevance": round(relevance, 2),
-                    "type": "news",
-                    "location": article.get('location', ''),
-                    "genre": article.get('genre', ''),
-                    "preprocessed": article.get('preprocessed', '')
-                })
-                logger.debug(
-                    f"Article {idx}: relevance={relevance:.3f} location='{article.get('location', '')}' "
-                    f"genre='{article.get('genre', '')}'"
+    # ── Helpers ──────────────────────────────────────────────────
+
+    def _build_contextual_only_response(
+        self,
+        claim: str,
+        fact_check_results: Optional[Dict[str, Any]],
+        news_results: Optional[Dict[str, Any]],
+        context,
+    ) -> Dict[str, Any]:
+        """
+        For OPINION / PREDICTIVE claims:
+        - No truth score
+        - No verdict
+        - Only contextual articles + explanation
+        """
+        sources: List[Dict[str, Any]] = []
+
+        if fact_check_results and fact_check_results.get("results"):
+            for result in fact_check_results["results"][:5]:
+                sources.append(
+                    {
+                        "title": result.get("title", "Fact-check result"),
+                        "url": result.get("url", ""),
+                        "date": result.get("date", ""),
+                        "source": result.get("source", "fact-checker"),
+                    }
                 )
-            
-            if len(news_results.get('articles', [])) > 0:
-                avg_relevance = sum(item['relevance'] for item in news_results['articles']) / len(news_results['articles'])
-                # Calculate news score based on credibility-aware relevance
-                # Score is between 30 (minimal) and 100 (high confidence)
-                news_score = min(100, max(30, int(avg_relevance * 100)))
-                logger.info(f"Average credibility-aware relevance: {avg_relevance:.3f}, Score: {news_score}")
-        else:
-            logger.debug("No relevant news articles found")
-            
-        if fact_check_score and news_score:
-            # Combined score with configurable weights (credibility-aware)
-            overall_score = max(fact_check_score, news_score)
-        elif fact_check_score:
-            overall_score = fact_check_score
-        elif news_score:
-            overall_score = news_score
-        else:
-            overall_score = None
-            
-        message = self._generate_combined_message(
-            bool(fact_check_results and fact_check_results.get('results')),
-            total_articles,
-            overall_score
+
+        if news_results and news_results.get("articles"):
+            for item in news_results["articles"][:10]:
+                sources.append(
+                    {
+                        "title": item.get("title", "News Article"),
+                        "url": item.get("url", ""),
+                        "date": item.get("published_datetime_utc", ""),
+                        "source": item.get("source_name", "news"),
+                        "snippet": item.get("snippet", ""),
+                    }
+                )
+
+        explanation = (
+            f"This claim was classified as {context.claim_type}, so no truth verdict "
+            "or numeric confidence is provided. Instead, related coverage is returned "
+            "to help understand the context."
         )
-        
-        logger.info(f"Final score: {overall_score}, Total sources: {len(sources)}")
-        
+
         return {
-            "score": overall_score,
-            "message": message,
-            "sources": sources,
             "claim_text": claim,
-            "total_articles_found": total_articles
+            "claim_type": context.claim_type,
+            "verdict": None,
+            "confidence": None,
+            "evidence": sources,
+            "explanation": explanation,
         }
 
-    def _generate_combined_message(self, has_fact_checks: bool,
-                                   article_count: int, score: Optional[int]) -> str:
-        """Generate a message based on available information"""
-        if has_fact_checks and article_count > 0:
-            return f"Found existing fact-checks and {article_count} related news articles for this claim."
-        elif has_fact_checks:
-            return "Found existing fact-checks for this claim."
-        elif article_count > 0:
-            if score and score >= 70:
-                return f"Found {article_count} highly relevant news articles discussing this topic."
-            elif score and score >= 50:
-                return f"Found {article_count} moderately relevant news articles related to this claim."
-            else:
-                return f"Found {article_count} news articles with some relevance to this claim."
-        else:
-            return "Limited information available for this claim."
+    def _build_evidence(self, articles_meta: List[Dict[str, Any]], context) -> List[Dict[str, Any]]:
+        """
+        Build evidence list from candidate articles and entailment signals.
+        """
+        labels = context.entailment_labels or []
+        confs = context.entailment_confidences or []
+        indices = getattr(context, 'valid_candidate_indices', None) or context.candidate_indices or []
+        semantic_scores = context.semantic_scores or []
 
-    def _generate_mock_response(self, claim: str) -> Dict[str, Any]:
-        """Generate a mock response when API is not available"""
-        return {
-            "score": None,
-            "message": (
-                "RapidAPI key not configured. This is a demo response. "
-                "Configure your RapidAPI key to get real fact-checking results."
-            ),
-            "sources": [
+        evidence: List[Dict[str, Any]] = []
+        for local_idx, article_idx in enumerate(indices):
+            # Bounds check on articles_meta
+            if article_idx >= len(articles_meta):
+                logger.warning(f"Article index {article_idx} out of range (only {len(articles_meta)} articles)")
+                continue
+
+            a = articles_meta[article_idx]
+            # Bounds check on labels/confs
+            label = labels[local_idx] if local_idx < len(labels) else None
+            conf = confs[local_idx] if local_idx < len(confs) else None
+            
+            # Bounds check on semantic_scores
+            semantic_score = semantic_scores[article_idx] if article_idx < len(semantic_scores) else None
+
+            evidence.append(
                 {
-                    "name": "Demo Source: Configure API Key",
-                    "url": "https://rapidapi.com/",
-                    "date": "2025-01-01",
-                    "source": "demo",
-                    "relevance": 0.0,
-                    "type": "demo"
+                    "title": a.get("title", ""),
+                    "url": a.get("url", ""),
+                    "source": a.get("source_name", "news"),
+                    "published_date": a.get("published_datetime_utc", ""),
+                    "snippet": a.get("snippet", ""),
+                    "entailment_label": label,
+                    "entailment_confidence": conf,
+                    "semantic_score": semantic_score,
                 }
-            ],
-            "claim_text": claim,
-            "total_articles_found": 0
-        }
+            )
+        return evidence
 
-    def _generate_no_results_response(self, claim: str) -> Dict[str, Any]:
-        """Generate response when no relevant information is found"""
-        return {
-            "score": None,
-            "message": (
-                "No relevant fact-checks or news articles found for this claim. "
-                "This could mean the claim is very new, highly specific, or not widely reported."
-            ),
-            "sources": [],
-            "claim_text": claim,
-            "total_articles_found": 0
-        }
+    def _generate_non_factual_or_mock_response(self, claim: str, context) -> Dict[str, Any]:
+        """
+        Used when API key is missing; still respects claim type behavior.
+        """
+        explanation = (
+            "NEWS_API_KEY not configured. This is a demo response. "
+            "Configure your API key to get real fact-checking results."
+        )
+        if context.claim_type == "FACTUAL":
+            return {
+                "claim_text": claim,
+                "claim_type": context.claim_type,
+                "verdict": "INSUFFICIENT",
+                "confidence": 0.0,
+                "evidence": [],
+                "explanation": explanation,
+            }
+        else:
+            return {
+                "claim_text": claim,
+                "claim_type": context.claim_type,
+                "verdict": None,
+                "confidence": None,
+                "evidence": [],
+                "explanation": explanation,
+            }

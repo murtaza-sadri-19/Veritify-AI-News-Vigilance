@@ -57,7 +57,10 @@
 /* ========================================
    SCORE CONTAINER
    ======================================== */
-.score-container {
+/* ========================================
+   VERDICT BADGE (NEW)
+   ======================================== */
+.verdict-container {
     padding: var(--spacing-2xl);
     text-align: center;
     color: white;
@@ -70,7 +73,7 @@
     min-width: 200px;
 }
 
-.score-container::before {
+.verdict-container::before {
     content: '';
     position: absolute;
     top: -50%;
@@ -82,57 +85,252 @@
     animation: pulse 3s ease-in-out infinite;
 }
 
-@keyframes pulse {
-    0%, 100% {
-        transform: scale(1);
-    }
-    50% {
-        transform: scale(1.2);
-    }
-}
-
 @media (min-width: 768px) {
-    .score-container {
+    .verdict-container {
         width: 220px;
     }
 }
 
-.high-score {
+.verdict-true {
     background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
 }
 
-.medium-score {
-    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-    box-shadow: 0 10px 30px rgba(245, 158, 11, 0.3);
-}
-
-.low-score {
+.verdict-false {
     background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
     box-shadow: 0 10px 30px rgba(239, 68, 68, 0.3);
 }
 
-.no-score {
+.verdict-partial {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    box-shadow: 0 10px 30px rgba(245, 158, 11, 0.3);
+}
+
+.verdict-opinion {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    box-shadow: 0 10px 30px rgba(139, 92, 246, 0.3);
+}
+
+.verdict-insufficient {
     background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
     box-shadow: 0 10px 30px rgba(107, 114, 128, 0.3);
 }
 
-.score {
-    font-size: 3.5rem;
-    font-weight: 900;
-    margin-bottom: var(--spacing-md);
+.verdict-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-lg);
     position: relative;
     z-index: 1;
+}
+
+.verdict-badge i {
+    font-size: 3rem;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.score-label {
+.verdict-label {
+    font-size: 1.5rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.confidence-score {
+    font-size: 0.9rem;
+    font-weight: 600;
+    opacity: 0.9;
+}
+
+/* ========================================
+   EXPLANATION SECTION
+   ======================================== */
+.explanation {
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    padding: var(--spacing-lg);
+    border-radius: var(--border-radius-lg);
+    border-left: 4px solid var(--primary-color);
+    margin-bottom: var(--spacing-lg);
+}
+
+.explanation h4 {
+    margin-bottom: var(--spacing-md);
+    color: var(--text-dark);
+    font-size: 1rem;
+}
+
+.explanation p {
+    color: var(--text-gray);
+    line-height: 1.8;
+}
+
+/* ========================================
+   EVIDENCE TABLE
+   ======================================== */
+.evidence-section {
+    margin-bottom: var(--spacing-lg);
+}
+
+.evidence-section h3 {
+    margin-bottom: var(--spacing-lg);
+    color: var(--text-dark);
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.evidence-section h3::before {
+    content: '';
+    width: 4px;
+    height: 24px;
+    background: var(--primary-color);
+    border-radius: 2px;
+}
+
+.evidence-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border: 1px solid var(--light-color);
+    border-radius: var(--border-radius-lg);
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.evidence-table thead {
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+}
+
+.evidence-table th {
+    padding: var(--spacing-md);
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-dark);
     font-size: 0.875rem;
     text-transform: uppercase;
-    letter-spacing: 2px;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid var(--light-color);
+}
+
+.evidence-table tbody tr {
+    border-bottom: 1px solid var(--light-color);
+    transition: all var(--transition-base);
+}
+
+.evidence-table tbody tr:hover {
+    background: #f9fafb;
+}
+
+.evidence-table td {
+    padding: var(--spacing-md);
+    vertical-align: top;
+    color: var(--text-gray);
+    font-size: 0.95rem;
+}
+
+.source-cell strong {
+    display: block;
+    color: var(--text-dark);
+    margin-bottom: var(--spacing-xs);
+}
+
+.source-meta {
+    font-size: 0.85rem;
+    color: var(--text-gray);
+    margin-top: var(--spacing-xs);
+}
+
+.entailment-cell {
+    text-align: center;
+}
+
+.entailment-badge {
+    display: inline-block;
+    padding: var(--spacing-xs) var(--spacing-md);
+    border-radius: 20px;
     font-weight: 600;
-    position: relative;
-    z-index: 1;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.entailment-entailment {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.entailment-contradiction {
+    background: #fee2e2;
+    color: #7f1d1d;
+}
+
+.entailment-neutral {
+    background: #dbeafe;
+    color: #0c2d6b;
+}
+
+.details-cell {
+    font-size: 0.9rem;
+}
+
+.details-cell p {
+    margin-bottom: var(--spacing-xs);
+}
+
+.details-cell div {
+    font-size: 0.85rem;
+    color: var(--text-gray);
+    margin-top: var(--spacing-xs);
+}
+
+.action-cell {
+    text-align: center;
+}
+
+.btn-small {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background: var(--primary-color);
+    color: white;
+    text-decoration: none;
+    border-radius: var(--border-radius-md);
+    font-size: 0.85rem;
+    transition: all var(--transition-base);
+}
+
+.btn-small:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* ========================================
+   OPINION NOTICE
+   ======================================== */
+.opinion-notice {
+    background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+    border: 1px solid #e9d5ff;
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-lg);
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+
+.opinion-notice i {
+    color: #8b5cf6;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.opinion-notice p {
+    color: var(--text-gray);
+    line-height: 1.8;
 }
 
 /* ========================================
@@ -429,5 +627,41 @@
     .source-link {
         width: 100%;
         justify-content: center;
+    }
+
+    /* Responsive evidence table for mobile */
+    .evidence-table {
+        font-size: 0.85rem;
+    }
+
+    .evidence-table thead {
+        display: none;
+    }
+
+    .evidence-table tbody tr {
+        display: block;
+        margin-bottom: var(--spacing-lg);
+        border: 1px solid var(--light-color);
+        border-radius: var(--border-radius-lg);
+        padding: var(--spacing-md);
+    }
+
+    .evidence-table td {
+        display: block;
+        padding: var(--spacing-sm) 0;
+        text-align: left;
+    }
+
+    .evidence-table td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        display: inline-block;
+        width: 120px;
+        color: var(--text-dark);
+    }
+
+    .verdict-container {
+        padding: var(--spacing-lg);
+        width: 100%;
     }
 }
