@@ -1,27 +1,63 @@
 {% extends "base.html" %}
 
-{% block title %}TruthTrack AI Vigilance - Fact Checker{% endblock %}
+{% block title %}TruthTrack - AI Fact Checker{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/results.css') }}">
 {% endblock %}
 
 {% block content %}
-<section class="hero">
-    <h1>Verify the Truth with AI</h1>
-    <p>Enter a claim to check against reliable fact-checking sources</p>
-</section>
-
-<section class="verification-form">
-    <div class="form-container">
-        <div class="input-group">
-            <textarea id="claim-input" placeholder="Enter a claim to verify..."></textarea>
+<section class="hero-section">
+    <div class="hero-content">
+        <h1 class="hero-title">Verify the Truth with AI</h1>
+        <p class="hero-subtitle">Powered by intelligent fact-checking and credible news sources</p>
+        
+        <div class="verification-card">
+            <div class="form-wrapper">
+                <div class="input-wrapper">
+                    <i class="fas fa-search"></i>
+                    <textarea 
+                        id="claim-input" 
+                        placeholder="Enter a claim to fact-check..."
+                        aria-label="Claim input"
+                    ></textarea>
+                    <button id="verify-button" class="btn btn-primary btn-verify">
+                        <i class="fas fa-check-circle"></i>
+                        Verify Claim
+                    </button>
+                </div>
+                <div class="character-count">
+                    <span id="char-count">0</span> / 500 characters
+                </div>
+            </div>
         </div>
-        <button id="verify-button" class="btn primary">Verify Claim</button>
+
+        <div class="features-grid">
+            <div class="feature-item">
+                <i class="fas fa-brain"></i>
+                <h3>AI-Powered</h3>
+                <p>Advanced algorithms analyze claims</p>
+            </div>
+            <div class="feature-item">
+                <i class="fas fa-globe"></i>
+                <h3>Multi-Source</h3>
+                <p>Cross-referenced with reliable sources</p>
+            </div>
+            <div class="feature-item">
+                <i class="fas fa-bolt"></i>
+                <h3>Fast Results</h3>
+                <p>Instant verification and insights</p>
+            </div>
+            <div class="feature-item">
+                <i class="fas fa-shield-alt"></i>
+                <h3>Trustworthy</h3>
+                <p>Powered by credible fact-checkers</p>
+            </div>
+        </div>
     </div>
 </section>
 
-<section id="results-section" class="results-section">
+<section id="results-section" class="results-section" style="display: none;">
     <div id="result-container" class="result-container"></div>
 </section>
 {% endblock %}
