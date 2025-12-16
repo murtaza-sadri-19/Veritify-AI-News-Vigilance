@@ -1,3 +1,2 @@
-from .article_analyzer import NewsArticleAnalyzer
-
-__all__ = ['NewsArticleAnalyzer']
+# Internal: Article analysis module
+# Not exposed in public API (used internally by FactCheckService)

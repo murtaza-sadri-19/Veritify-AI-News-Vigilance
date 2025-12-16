@@ -19,6 +19,7 @@
     --light-color: #f3f4f6;
     --text-dark: #111827;
     --text-light: #6b7280;
+    --text-gray: #6b7280;
     
     /* Gradients */
     --gradient-primary: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
