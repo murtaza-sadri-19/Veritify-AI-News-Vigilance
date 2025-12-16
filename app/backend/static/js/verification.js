@@ -1,4 +1,4 @@
-// Verification functionality for TruthTrack
+// Verification functionality for TruthTrack - Enhanced UX
 
 document.addEventListener('DOMContentLoaded', function() {
     const verifyButton = document.getElementById('verify-button');
@@ -9,9 +9,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (verifyButton) {
         verifyButton.addEventListener('click', verifyFact);
 
-        // Allow Enter key to trigger verification
-        claimInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
+        // Allow Ctrl+Enter or Cmd+Enter to submit
+        claimInput.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
                 e.preventDefault();
                 verifyFact();
             }
@@ -19,8 +19,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function verifyFact() {
-        // Validate input
         const claim = claimInput.value.trim();
+
+        // Validation
         if (!claim) {
             showNotification('Please enter a claim to verify', 'warning');
             claimInput.focus();
@@ -33,19 +34,27 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Disable button and show loading state
+        if (claim.length > 500) {
+            showNotification('Claim is too long (max 500 characters)', 'warning');
+            return;
+        }
+
+        // Disable button and show loading
         verifyButton.disabled = true;
-        verifyButton.textContent = 'Verifying...';
+        const originalText = verifyButton.innerHTML;
+        verifyButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
 
         resultContainer.innerHTML = `
             <div class="loading">
                 <div class="loading-spinner"></div>
-                <p>Checking facts... This may take a moment.</p>
+                <p>Analyzing claim across multiple sources...</p>
+                <p style="font-size: 0.875rem; color: #9ca3af; margin-top: 1rem;">This may take a moment</p>
             </div>
         `;
-        resultsSection.classList.add('active');
+        resultsSection.style.display = 'block';
+        smoothScrollTo(resultsSection);
 
-        // Call the API
+        // API call
         fetch('/api/verify', {
             method: 'POST',
             headers: {
@@ -64,7 +73,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             if (data.success) {
                 displayResults(data.result, claim);
-                showNotification('Fact-check completed!', 'success');
+                showNotification('✓ Fact-check completed!', 'success');
             } else {
                 throw new Error(data.error || 'Unknown error occurred');
             }
@@ -73,151 +82,189 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Verification error:', error);
             resultContainer.innerHTML = `
                 <div class="error">
-                    <h3>Error occurred</h3>
-                    <p>${error.message}</p>
-                    <button onclick="location.reload()" class="btn primary">Try Again</button>
+                    <h3><i class="fas fa-exclamation-circle"></i> Error Occurred</h3>
+                    <p>${escapeHtml(error.message)}</p>
+                    <button onclick="location.reload()" class="btn btn-primary" style="margin-top: 1rem;">
+                        <i class="fas fa-redo"></i> Try Again
+                    </button>
                 </div>
             `;
             showNotification('Error during fact-check', 'error');
         })
         .finally(() => {
-            // Re-enable button
             verifyButton.disabled = false;
-            verifyButton.textContent = 'Verify Claim';
+            verifyButton.innerHTML = originalText;
         });
     }
 
     function displayResults(result, originalClaim) {
-        // Determine score class and label
-        let scoreClass = 'medium-score';
-        let scoreLabel = 'Relevance Score';
+        let verdictClass = 'verdict-insufficient';
+        let verdictIcon = 'fa-question-circle';
+        let verdictLabel = 'INSUFFICIENT DATA';
+        let verdictColor = '#9ca3af';
 
-        if (result.score === null) {
-            scoreClass = 'no-score';
-            scoreLabel = 'No Score';
-        } else if (result.score >= 70) {
-            scoreClass = 'high-score';
-        } else if (result.score <= 30) {
-            scoreClass = 'low-score';
+        // Map verdict to UI representation
+        if (result.verdict) {
+            switch (result.verdict.toUpperCase()) {
+                case 'TRUE':
+                    verdictClass = 'verdict-true';
+                    verdictIcon = 'fa-check-circle';
+                    verdictLabel = 'TRUE';
+                    verdictColor = '#10b981';
+                    break;
+                case 'FALSE':
+                    verdictClass = 'verdict-false';
+                    verdictIcon = 'fa-times-circle';
+                    verdictLabel = 'FALSE';
+                    verdictColor = '#ef4444';
+                    break;
+                case 'PARTIALLY_TRUE':
+                case 'PARTIALLY FALSE':
+                    verdictClass = 'verdict-partial';
+                    verdictIcon = 'fa-exclamation-circle';
+                    verdictLabel = 'PARTIALLY FALSE';
+                    verdictColor = '#f59e0b';
+                    break;
+                case 'OPINION':
+                    verdictClass = 'verdict-opinion';
+                    verdictIcon = 'fa-comment-dots';
+                    verdictLabel = 'OPINION';
+                    verdictColor = '#8b5cf6';
+                    break;
+                case 'INSUFFICIENT':
+                    verdictClass = 'verdict-insufficient';
+                    verdictIcon = 'fa-question-circle';
+                    verdictLabel = 'INSUFFICIENT DATA';
+                    verdictColor = '#9ca3af';
+                    break;
+            }
         }
 
-        // Create the result HTML
+        const confidencePercent = result.confidence ? Math.round(result.confidence * 100) : 0;
+
         let html = `
             <div class="result-card">
-                <div class="score-container ${scoreClass}">
-                    <div class="score">${result.score !== null ? result.score : '?'}</div>
-                    <div class="score-label">${scoreLabel}</div>
+                <div class="verdict-container ${verdictClass}">
+                    <div class="verdict-badge">
+                        <i class="fas ${verdictIcon}"></i>
+                        <div>
+                            <div class="verdict-label">${verdictLabel}</div>
+                            <div class="confidence-score">
+                                ${confidencePercent}% confidence
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="result-details">
-                    <div class="claim-text">"${escapeHtml(originalClaim)}"</div>
-                    <div class="result-message">${escapeHtml(result.message)}</div>
+                    <div class="claim-text">
+                        <i class="fas fa-quote-left"></i>
+                        ${escapeHtml(originalClaim)}
+                    </div>
         `;
 
-        // Add sources if available
-        if (result.sources && result.sources.length > 0) {
-            html += `<h3>Related News Sources:</h3><ul>`;
+        // Add explanation if available
+        if (result.explanation) {
+            html += `
+                <div class="explanation">
+                    <h4>Why ${verdictLabel.toLowerCase()}?</h4>
+                    <p>${escapeHtml(result.explanation)}</p>
+                </div>
+            `;
+        }
 
-            result.sources.forEach((source, index) => {
-                const date = source.date ? formatDate(source.date) : '';
-                const relevance = source.relevance ? ` (${Math.round(source.relevance * 100)}% relevant)` : '';
+        // Add evidence table
+        if (result.evidence && result.evidence.length > 0) {
+            html += `
+                <div class="evidence-section">
+                    <h3><i class="fas fa-link"></i> Supporting Evidence</h3>
+                    <table class="evidence-table">
+                        <thead>
+                            <tr>
+                                <th>Source</th>
+                                <th>Entailment</th>
+                                <th>Details</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            result.evidence.forEach((evidence) => {
+                // Map backend field names: entailment_label, entailment_confidence, published_date, snippet
+                const rawEntailment = evidence.entailment_label || evidence.entailment || 'NEUTRAL';
+                const entailmentConfidence = evidence.entailment_confidence;
+                const entailmentClass = `entailment-${String(rawEntailment).toLowerCase()}`;
+                const entailmentLabel = rawEntailment;
+                const date = evidence.published_date ? formatDate(evidence.published_date) : (evidence.date ? formatDate(evidence.date) : '');
+                const snippet = evidence.snippet || evidence.excerpt || '';
 
                 html += `
-                    <li>
-                        <div class="source-header">
-                            <strong>${escapeHtml(source.name)}</strong>
-                            ${relevance ? `<span class="relevance-badge">${relevance}</span>` : ''}
-                        </div>
-                        ${source.source ? `<div class="source-name">Source: ${escapeHtml(source.source)}</div>` : ''}
-                        ${date ? `<div class="source-date">${date}</div>` : ''}
-                        ${source.url ? `<a href="${source.url}" class="source-link" target="_blank" rel="noopener">Read article →</a>` : ''}
-                    </li>
+                    <tr class="${entailmentClass}">
+                        <td class="source-cell">
+                            <strong>${escapeHtml(evidence.source || 'Unknown')}</strong>
+                            <div class="source-meta">${escapeHtml(evidence.title || '')}</div>
+                        </td>
+                        <td class="entailment-cell">
+                            <span class="entailment-badge ${entailmentClass}">
+                                ${entailmentLabel}${typeof entailmentConfidence === 'number' ? ` (${Math.round(entailmentConfidence * 100)}%)` : ''}
+                            </span>
+                        </td>
+                        <td class="details-cell">
+                            ${snippet ? `<p>${escapeHtml(snippet)}</p>` : ''}
+                            ${evidence.location ? `<div><i class="fas fa-map-marker-alt"></i> ${escapeHtml(evidence.location)}</div>` : ''}
+                            ${evidence.genre ? `<div><i class="fas fa-tag"></i> ${escapeHtml(evidence.genre)}</div>` : ''}
+                            ${date ? `<div><i class="fas fa-calendar"></i> ${date}</div>` : ''}
+                        </td>
+                        <td class="action-cell">
+                            ${evidence.url ? `<a href="${escapeHtml(evidence.url)}" class="btn-small" target="_blank" rel="noopener"><i class="fas fa-external-link-alt"></i> Read</a>` : '-'}
+                        </td>
+                    </tr>
                 `;
             });
 
-            html += `</ul>`;
-
-            // Add summary if multiple sources
-            if (result.total_articles_found && result.total_articles_found > result.sources.length) {
-                html += `<p class="sources-summary">Showing top ${result.sources.length} of ${result.total_articles_found} articles found.</p>`;
-            }
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        } else if (result.verdict && result.verdict.toUpperCase() === 'OPINION') {
+            html += `
+                <div class="opinion-notice">
+                    <i class="fas fa-comment-dots"></i>
+                    <p>This appears to be a matter of opinion or prediction rather than a factual claim. The system cannot verify opinions.</p>
+                </div>
+            `;
         } else {
-            html += `<div class="no-sources">No specific news articles found for this claim.</div>`;
+            html += `
+                <div class="no-sources">
+                    <i class="fas fa-search"></i> 
+                    <p>No specific evidence found for this claim. This could mean the claim is very new, highly specific, or not widely reported.</p>
+                </div>
+            `;
         }
 
-        // Add debug info in development
+        // Debug info (development only)
         if (result.debug && window.location.hostname === 'localhost') {
             html += `
                 <details class="debug-info">
-                    <summary>Debug Information</summary>
-                    <pre>${JSON.stringify(result.debug, null, 2)}</pre>
+                    <summary><i class="fas fa-bug"></i> Debug Information (Development)</summary>
+                    <pre>${escapeHtml(JSON.stringify(result.debug, null, 2))}</pre>
                 </details>
             `;
         }
 
         html += `</div></div>`;
 
-        // Update the container with animation
         resultContainer.innerHTML = html;
 
-        // Scroll to results
+        // Add smooth animation
         setTimeout(() => {
-            resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            smoothScrollTo(resultsSection);
         }, 100);
     }
 
-    // Helper functions
-    function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-
-    function showNotification(message, type = 'info') {
-        // Remove existing notifications
-        const existingNotifications = document.querySelectorAll('.notification');
-        existingNotifications.forEach(n => n.remove());
-
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
-        notification.innerHTML = `
-            <span>${escapeHtml(message)}</span>
-            <button class="notification-close" onclick="this.parentElement.remove()">×</button>
-        `;
-
-        document.body.appendChild(notification);
-
-        // Show notification
-        setTimeout(() => {
-            notification.classList.add('show');
-        }, 10);
-
-        // Auto remove after 5 seconds
-        setTimeout(() => {
-            if (notification.parentElement) {
-                notification.classList.remove('show');
-                setTimeout(() => {
-                    if (notification.parentElement) {
-                        notification.remove();
-                    }
-                }, 300);
-            }
-        }, 5000);
-    }
-
-    function formatDate(dateString) {
-        if (!dateString) return '';
-
-        try {
-            const date = new Date(dateString);
-            if (isNaN(date.getTime())) return dateString; // Return original if invalid
-
-            return date.toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-            });
-        } catch (e) {
-            return dateString;
-        }
-    }
+    // Ensure helper functions are available
+    window.escapeHtml = escapeHtml;
+    window.formatDate = formatDate;
+    window.smoothScrollTo = smoothScrollTo;
 });

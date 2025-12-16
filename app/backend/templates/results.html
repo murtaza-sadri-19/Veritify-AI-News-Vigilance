@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Fact-Check Results - TruthTrack{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/results.css') }}">
+{% endblock %}
+
+{% block content %}
+<section class="results-page">
+    <div class="results-header">
+        <h1>Fact-Check Results</h1>
+        <p class="subtitle">AI-powered verification with evidence</p>
+    </div>
+
+    <!-- Results will be dynamically inserted here by JavaScript -->
+    <section id="results-section" class="results-section" style="display: none;">
+        <div id="result-container" class="result-container"></div>
+    </section>
+
+    <!-- Empty state when no results -->
+    <div id="empty-state" class="empty-state">
+        <i class="fas fa-inbox"></i>
+        <p>No results yet. Use the verification form to fact-check a claim.</p>
+        <a href="/" class="btn btn-primary">Go to Verifier</a>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/verification.js') }}"></script>
+{% endblock %}
