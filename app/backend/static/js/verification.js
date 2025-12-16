@@ -1,4 +1,4 @@
-// Verification functionality for TruthTrack
+// Verification functionality for TruthTrack - Enhanced UX
 
 document.addEventListener('DOMContentLoaded', function() {
     const verifyButton = document.getElementById('verify-button');
@@ -9,9 +9,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (verifyButton) {
         verifyButton.addEventListener('click', verifyFact);
 
-        // Allow Enter key to trigger verification
-        claimInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
+        // Allow Ctrl+Enter or Cmd+Enter to submit
+        claimInput.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
                 e.preventDefault();
                 verifyFact();
             }
@@ -19,8 +19,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function verifyFact() {
-        // Validate input
         const claim = claimInput.value.trim();
+
+        // Validation
         if (!claim) {
             showNotification('Please enter a claim to verify', 'warning');
             claimInput.focus();
@@ -33,19 +34,27 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Disable button and show loading state
+        if (claim.length > 500) {
+            showNotification('Claim is too long (max 500 characters)', 'warning');
+            return;
+        }
+
+        // Disable button and show loading
         verifyButton.disabled = true;
-        verifyButton.textContent = 'Verifying...';
+        const originalText = verifyButton.innerHTML;
+        verifyButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
 
         resultContainer.innerHTML = `
             <div class="loading">
                 <div class="loading-spinner"></div>
-                <p>Checking facts... This may take a moment.</p>
+                <p>Analyzing claim across multiple sources...</p>
+                <p style="font-size: 0.875rem; color: #9ca3af; margin-top: 1rem;">This may take a moment</p>
             </div>
         `;
-        resultsSection.classList.add('active');
+        resultsSection.style.display = 'block';
+        smoothScrollTo(resultsSection);
 
-        // Call the API
+        // API call
         fetch('/api/verify', {
             method: 'POST',
             headers: {
@@ -64,7 +73,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             if (data.success) {
                 displayResults(data.result, claim);
-                showNotification('Fact-check completed!', 'success');
+                showNotification('✓ Fact-check completed!', 'success');
             } else {
                 throw new Error(data.error || 'Unknown error occurred');
             }
@@ -73,35 +82,36 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Verification error:', error);
             resultContainer.innerHTML = `
                 <div class="error">
-                    <h3>Error occurred</h3>
-                    <p>${error.message}</p>
-                    <button onclick="location.reload()" class="btn primary">Try Again</button>
+                    <h3><i class="fas fa-exclamation-circle"></i> Error Occurred</h3>
+                    <p>${escapeHtml(error.message)}</p>
+                    <button onclick="location.reload()" class="btn btn-primary" style="margin-top: 1rem;">
+                        <i class="fas fa-redo"></i> Try Again
+                    </button>
                 </div>
             `;
             showNotification('Error during fact-check', 'error');
         })
         .finally(() => {
-            // Re-enable button
             verifyButton.disabled = false;
-            verifyButton.textContent = 'Verify Claim';
+            verifyButton.innerHTML = originalText;
         });
     }
 
     function displayResults(result, originalClaim) {
-        // Determine score class and label
         let scoreClass = 'medium-score';
-        let scoreLabel = 'Relevance Score';
+        let scoreLabel = 'RELEVANCE';
 
         if (result.score === null) {
             scoreClass = 'no-score';
-            scoreLabel = 'No Score';
+            scoreLabel = 'NO DATA';
         } else if (result.score >= 70) {
             scoreClass = 'high-score';
+            scoreLabel = 'HIGH';
         } else if (result.score <= 30) {
             scoreClass = 'low-score';
+            scoreLabel = 'LOW';
         }
 
-        // Create the result HTML
         let html = `
             <div class="result-card">
                 <div class="score-container ${scoreClass}">
@@ -109,115 +119,74 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="score-label">${scoreLabel}</div>
                 </div>
                 <div class="result-details">
-                    <div class="claim-text">"${escapeHtml(originalClaim)}"</div>
-                    <div class="result-message">${escapeHtml(result.message)}</div>
+                    <div class="claim-text">
+                        <i class="fas fa-quote-left"></i>
+                        ${escapeHtml(originalClaim)}
+                    </div>
+                    <div class="result-message">
+                        <i class="fas fa-info-circle"></i>
+                        ${escapeHtml(result.message)}
+                    </div>
         `;
 
-        // Add sources if available
+        // Add sources
         if (result.sources && result.sources.length > 0) {
-            html += `<h3>Related News Sources:</h3><ul>`;
+            html += `<h3><i class="fas fa-link"></i> Related Sources (${result.sources.length})</h3><ul>`;
 
             result.sources.forEach((source, index) => {
                 const date = source.date ? formatDate(source.date) : '';
-                const relevance = source.relevance ? ` (${Math.round(source.relevance * 100)}% relevant)` : '';
+                const relevance = source.relevance ? Math.round(source.relevance * 100) : 0;
+                const typeIcon = source.type === 'fact-check' ? 'fas fa-badge-check' : 'fas fa-newspaper';
 
                 html += `
                     <li>
                         <div class="source-header">
-                            <strong>${escapeHtml(source.name)}</strong>
-                            ${relevance ? `<span class="relevance-badge">${relevance}</span>` : ''}
+                            <strong>
+                                <i class="${typeIcon}"></i>
+                                ${escapeHtml(source.name)}
+                            </strong>
+                            ${relevance > 0 ? `<span class="relevance-badge">${relevance}% Match</span>` : ''}
                         </div>
-                        ${source.source ? `<div class="source-name">Source: ${escapeHtml(source.source)}</div>` : ''}
-                        ${date ? `<div class="source-date">${date}</div>` : ''}
-                        ${source.url ? `<a href="${source.url}" class="source-link" target="_blank" rel="noopener">Read article →</a>` : ''}
+                        ${source.source ? `<div class="source-name"><i class="fas fa-tag"></i> ${escapeHtml(source.source)}</div>` : ''}
+                        ${date ? `<div class="source-date"><i class="fas fa-calendar"></i> ${date}</div>` : ''}
+                        ${source.location ? `<div class="source-name"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(source.location)}</div>` : ''}
+                        ${source.genre ? `<div class="source-name"><i class="fas fa-film"></i> ${escapeHtml(source.genre)}</div>` : ''}
+                        ${source.url ? `<a href="${escapeHtml(source.url)}" class="source-link" target="_blank" rel="noopener"><i class="fas fa-external-link-alt"></i> Read Full Article</a>` : ''}
                     </li>
                 `;
             });
 
             html += `</ul>`;
 
-            // Add summary if multiple sources
             if (result.total_articles_found && result.total_articles_found > result.sources.length) {
-                html += `<p class="sources-summary">Showing top ${result.sources.length} of ${result.total_articles_found} articles found.</p>`;
+                html += `<div class="sources-summary"><i class="fas fa-chart-bar"></i> Showing ${result.sources.length} of ${result.total_articles_found} total articles found</div>`;
             }
         } else {
-            html += `<div class="no-sources">No specific news articles found for this claim.</div>`;
+            html += `<div class="no-sources"><i class="fas fa-search"></i> No specific news articles found for this claim. This could mean the claim is very new, highly specific, or not widely reported.</div>`;
         }
 
-        // Add debug info in development
+        // Debug info (development only)
         if (result.debug && window.location.hostname === 'localhost') {
             html += `
                 <details class="debug-info">
-                    <summary>Debug Information</summary>
-                    <pre>${JSON.stringify(result.debug, null, 2)}</pre>
+                    <summary><i class="fas fa-bug"></i> Debug Information (Development)</summary>
+                    <pre>${escapeHtml(JSON.stringify(result.debug, null, 2))}</pre>
                 </details>
             `;
         }
 
         html += `</div></div>`;
 
-        // Update the container with animation
         resultContainer.innerHTML = html;
 
-        // Scroll to results
+        // Add smooth animation
         setTimeout(() => {
-            resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            smoothScrollTo(resultsSection);
         }, 100);
     }
 
-    // Helper functions
-    function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-
-    function showNotification(message, type = 'info') {
-        // Remove existing notifications
-        const existingNotifications = document.querySelectorAll('.notification');
-        existingNotifications.forEach(n => n.remove());
-
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
-        notification.innerHTML = `
-            <span>${escapeHtml(message)}</span>
-            <button class="notification-close" onclick="this.parentElement.remove()">×</button>
-        `;
-
-        document.body.appendChild(notification);
-
-        // Show notification
-        setTimeout(() => {
-            notification.classList.add('show');
-        }, 10);
-
-        // Auto remove after 5 seconds
-        setTimeout(() => {
-            if (notification.parentElement) {
-                notification.classList.remove('show');
-                setTimeout(() => {
-                    if (notification.parentElement) {
-                        notification.remove();
-                    }
-                }, 300);
-            }
-        }, 5000);
-    }
-
-    function formatDate(dateString) {
-        if (!dateString) return '';
-
-        try {
-            const date = new Date(dateString);
-            if (isNaN(date.getTime())) return dateString; // Return original if invalid
-
-            return date.toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-            });
-        } catch (e) {
-            return dateString;
-        }
-    }
+    // Ensure helper functions are available
+    window.escapeHtml = escapeHtml;
+    window.formatDate = formatDate;
+    window.smoothScrollTo = smoothScrollTo;
 });
