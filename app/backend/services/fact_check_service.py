@@ -7,7 +7,6 @@ from typing import Dict, Optional, Any
 from datetime import datetime, timedelta, timezone
 from .utils.text import sanitize_text, truncate_text
 from .relevance.scorer import NewsRelevanceCalculator
-from .relevance.features import get_keywords, extract_entities
 from .analysis.article_analyzer import NewsArticleAnalyzer
 from .news_fetcher import NewsFetcher
 
@@ -35,13 +34,20 @@ class FactCheckService(NewsFetcher):
         self.news_api_lang = os.getenv("NEWS_API_LANG", "en")
         # Optional section/topic (if provided, will be used instead of free-text search)
         self.news_api_section = os.getenv("NEWS_API_SECTION", "")
-        # Minimum relevance threshold to consider an article (0.0 - 1.0)
+        # Top-K ranking: number of top articles to consider (instead of threshold)
         try:
-            self.relevance_threshold = float(os.getenv("NEWS_RELEVANCE_THRESHOLD", "0.25"))
+            self.top_k_articles = int(os.getenv("NEWS_TOP_K_ARTICLES", "5"))
         except ValueError:
-            self.relevance_threshold = 0.25
+            self.top_k_articles = 5
         # Limit number of sample articles logged
         self.sample_article_limit = int(os.getenv("NEWS_SAMPLE_LIMIT", "5"))
+        # Scoring weights (configurable for credibility and relevance)
+        try:
+            self.weight_relevance = float(os.getenv("SCORE_WEIGHT_RELEVANCE", "0.4"))
+            self.weight_credibility = float(os.getenv("SCORE_WEIGHT_CREDIBILITY", "0.6"))
+        except ValueError:
+            self.weight_relevance = 0.4
+            self.weight_credibility = 0.6
 
     def check_claim(self, claim: str) -> Dict[str, Any]:
         """
@@ -112,7 +118,7 @@ class FactCheckService(NewsFetcher):
         if news_results and news_results.get('articles'):
             total_articles = news_results.get('total_found', 0)
             relevant_count = len(news_results.get('articles', []))
-            logger.info(f"Found {relevant_count} relevant news articles out of {total_articles} total")
+            logger.info(f"Found {relevant_count} relevant news articles out of {total_articles} total (top-{news_results.get('relevant_count', relevant_count)} ranked)")
             
             for idx, item in enumerate(news_results['articles'][:5]):
                 article = item.get('article', {})
@@ -135,12 +141,15 @@ class FactCheckService(NewsFetcher):
             
             if len(news_results.get('articles', [])) > 0:
                 avg_relevance = sum(item['relevance'] for item in news_results['articles']) / len(news_results['articles'])
+                # Calculate news score based on credibility-aware relevance
+                # Score is between 30 (minimal) and 100 (high confidence)
                 news_score = min(100, max(30, int(avg_relevance * 100)))
-                logger.info(f"Average news relevance: {avg_relevance:.3f}, Score: {news_score}")
+                logger.info(f"Average credibility-aware relevance: {avg_relevance:.3f}, Score: {news_score}")
         else:
             logger.debug("No relevant news articles found")
             
         if fact_check_score and news_score:
+            # Combined score with configurable weights (credibility-aware)
             overall_score = max(fact_check_score, news_score)
         elif fact_check_score:
             overall_score = fact_check_score

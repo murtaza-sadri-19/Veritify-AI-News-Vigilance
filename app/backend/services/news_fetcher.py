@@ -5,16 +5,23 @@ import os
 import urllib.parse
 from datetime import datetime, timedelta, timezone
 from .utils.text import sanitize_text, truncate_text
-from .relevance.features import get_keywords, extract_entities
 from .relevance.scorer import NewsRelevanceCalculator
+import spacy
 import logging
 
 logger = logging.getLogger(__name__)
 
 class NewsFetcher:
     def __init__(self):
-        """Initialize NewsFetcher with relevance calculator"""
+        """Initialize NewsFetcher with relevance calculator and spaCy NLP"""
         self.relevance_calculator = NewsRelevanceCalculator()
+        # Load spaCy model for entity extraction and keyword analysis
+        try:
+            self.nlp = spacy.load("en_core_web_sm")
+            logger.info("spaCy model loaded successfully")
+        except OSError:
+            logger.warning("spaCy model 'en_core_web_sm' not found. Install with: python -m spacy download en_core_web_sm")
+            self.nlp = None
     def _search_fact_checker_api(self, claim: str, debug_info: Dict) -> Optional[Dict[str, Any]]:
         """Search the fact-checker API for existing fact-checks"""
         conn = None
@@ -66,22 +73,8 @@ class NewsFetcher:
         try:
             logger.info(f"Starting news fetch for claim: '{claim}'")
 
-            # Build focused query terms from claim keywords and entities
-            keywords = get_keywords(claim, max_keywords=6)
-            entities = extract_entities(claim)
-            # Prioritize entities (exact phrases) then keywords
-            query_terms = []
-            for ent in entities:
-                if len(ent.split()) > 1:
-                    query_terms.append(f'"{ent}"')
-            for kw in keywords:
-                if kw not in " ".join(query_terms):
-                    query_terms.append(kw)
-
-            # Fallback to full claim if no keywords/entities extracted
-            if not query_terms:
-                query_terms = [claim]
-
+            # Build focused query terms from claim using spaCy NLP
+            query_terms = self._extract_query_terms(claim)
             constructed_query = " ".join(query_terms)
 
             # Date range filter (optional)
@@ -191,52 +184,52 @@ class NewsFetcher:
                         'relevance': round(relevance, 3)
                     })
 
-                if relevance >= self.relevance_threshold:
+                # Collect all articles for top-k ranking (no threshold filtering)
+                try:
+                    # Advanced analysis using NewsArticleAnalyzer
+                    full_text = f"{title}. {snippet}"
+                    
+                    # Perform NLP analysis with error handling
                     try:
-                        # Advanced analysis using NewsArticleAnalyzer
-                        full_text = f"{title}. {snippet}"
-                        
-                        # Perform NLP analysis with error handling
-                        try:
-                            preprocessed = self.article_analyzer.preprocess_text(full_text)
-                        except Exception as e:
-                            logger.warning(f"Preprocessing failed for article '{title[:50]}': {str(e)}")
-                            preprocessed = full_text
-                        
-                        try:
-                            location = self.article_analyzer.extract_location(full_text)
-                        except Exception as e:
-                            logger.warning(f"Location extraction failed for article '{title[:50]}': {str(e)}")
-                            location = ""
-                        
-                        try:
-                            genre = self.article_analyzer.classify_genre(full_text)
-                        except Exception as e:
-                            logger.warning(f"Genre classification failed for article '{title[:50]}': {str(e)}")
-                            genre = ""
-                        
-                        article['preprocessed'] = preprocessed
-                        article['location'] = location
-                        article['genre'] = genre
-                        
-                        relevant_articles.append({
-                            'article': article,
-                            'relevance': relevance,
-                            'published': published,
-                            'source': source_name,
-                            'url': url
-                        })
-                        logger.info(f"Article analyzed: title='{title[:60]}' relevance={relevance:.3f} location='{location}' genre='{genre}'")
+                        preprocessed = self.article_analyzer.preprocess_text(full_text)
                     except Exception as e:
-                        logger.error(f"Failed to process article '{title[:50]}': {str(e)}")
-                        # Still add article even if analysis fails
-                        relevant_articles.append({
-                            'article': article,
-                            'relevance': relevance,
-                            'published': published,
-                            'source': source_name,
-                            'url': url
-                        })
+                        logger.warning(f"Preprocessing failed for article '{title[:50]}': {str(e)}")
+                        preprocessed = full_text
+                    
+                    try:
+                        location = self.article_analyzer.extract_location(full_text)
+                    except Exception as e:
+                        logger.warning(f"Location extraction failed for article '{title[:50]}': {str(e)}")
+                        location = ""
+                    
+                    try:
+                        genre = self.article_analyzer.classify_genre(full_text)
+                    except Exception as e:
+                        logger.warning(f"Genre classification failed for article '{title[:50]}': {str(e)}")
+                        genre = ""
+                    
+                    article['preprocessed'] = preprocessed
+                    article['location'] = location
+                    article['genre'] = genre
+                    
+                    relevant_articles.append({
+                        'article': article,
+                        'relevance': relevance,
+                        'published': published,
+                        'source': source_name,
+                        'url': url
+                    })
+                    logger.info(f"Article analyzed: title='{title[:60]}' relevance={relevance:.3f} location='{location}' genre='{genre}'")
+                except Exception as e:
+                    logger.error(f"Failed to process article '{title[:50]}': {str(e)}")
+                    # Still add article even if analysis fails
+                    relevant_articles.append({
+                        'article': article,
+                        'relevance': relevance,
+                        'published': published,
+                        'source': source_name,
+                        'url': url
+                    })
 
             # Sort relevant articles by relevance desc, then by published date (if available)
             def _parsed_date(a):
@@ -246,6 +239,10 @@ class NewsFetcher:
                     return datetime.min
 
             relevant_articles.sort(key=lambda x: (x['relevance'], _parsed_date(x)), reverse=True)
+            
+            # Apply top-k ranking: keep only top K articles (configurable)
+            top_k_articles = getattr(self, 'top_k_articles', 5)
+            top_articles = relevant_articles[:top_k_articles]
 
             # Add collected source and sample info to debug_info
             debug_info['realtime_news_api']['article_sources'] = list(article_sources)
@@ -267,12 +264,15 @@ class NewsFetcher:
                 logger.info("No sample articles available from news API")
 
             logger.info(f"Relevant articles found: {len(relevant_articles)} for claim: '{claim}'")
+            logger.info(f"Top-{top_k_articles} articles selected for claim: '{claim}'")
             debug_info['realtime_news_api']['relevant_articles'] = len(relevant_articles)
+            debug_info['realtime_news_api']['top_k'] = top_k_articles
             logger.info(f"Finished news fetch for claim: '{claim}'")
 
             return {
-                'articles': relevant_articles[:10],  # Limit to top 10
+                'articles': top_articles,  # Return only top-k articles
                 'total_found': len(articles),
+                'relevant_count': len(relevant_articles),
                 'query': constructed_query
             }
         except Exception as e:
@@ -285,3 +285,60 @@ class NewsFetcher:
                     conn.close()
                 except Exception:
                     pass
+
+    def _extract_query_terms(self, text: str, max_terms: int = 6) -> list:
+        """
+        Extract important query terms from text using spaCy NLP.
+        Prioritizes named entities (PERSON, ORG, GPE) then high-value noun chunks.
+        
+        Args:
+            text: Input text to extract terms from
+            max_terms: Maximum number of terms to extract
+            
+        Returns:
+            List of query terms (entities quoted, keywords unquoted)
+        """
+        query_terms = []
+        
+        if not self.nlp:
+            logger.warning("spaCy not available, returning original text as fallback")
+            return [text] if text else []
+        
+        try:
+            doc = self.nlp(text)
+            
+            # Extract named entities (prioritize multi-word entities)
+            entities = []
+            for ent in doc.ents:
+                if ent.label_ in ['PERSON', 'ORG', 'GPE', 'PRODUCT', 'EVENT']:
+                    # Quote multi-word entities for exact phrase search
+                    if len(ent.text.split()) > 1:
+                        entities.append(f'"{ent.text}"')
+                    else:
+                        entities.append(ent.text)
+            
+            query_terms.extend(entities[:max_terms])
+            
+            # Extract noun chunks if we need more terms
+            if len(query_terms) < max_terms:
+                stopwords = {'the', 'a', 'an', 'is', 'are', 'was', 'were'}
+                for chunk in doc.noun_chunks:
+                    if len(query_terms) >= max_terms:
+                        break
+                    # Skip if already in entities or is stopword
+                    chunk_text = chunk.text.lower()
+                    if (chunk_text not in [e.strip('"').lower() for e in query_terms] and 
+                        chunk_text not in stopwords and
+                        len(chunk.text) > 3):
+                        query_terms.append(chunk.text)
+            
+            # Fallback to original text if no terms extracted
+            if not query_terms:
+                query_terms = [text]
+            
+            logger.debug(f"Extracted query terms: {query_terms}")
+            return query_terms[:max_terms]
+            
+        except Exception as e:
+            logger.error(f"Error extracting query terms with spaCy: {e}")
+            return [text] if text else []
