@@ -1,52 +1,107 @@
 {% extends "base.html" %}
 
-{% block title %}About TruthTrack AI Vigilance{% endblock %}
+{% block title %}About Veritify - How It Works{% endblock %}
 
 {% block content %}
 <section class="about-section">
-    <h1>About TruthTrack AI Vigilance</h1>
-
-    <div class="info-card">
-        <h2>Our Mission</h2>
-        <p>TruthTrack AI Vigilance aims to combat misinformation by providing users with access to verified fact-checks
-            from reputable sources. We aggregate results from established fact-checking organizations to help you
-            determine the truthfulness of claims.</p>
+    <div class="about-header">
+        <h1>About Veritify AI</h1>
+        <p class="about-intro">Empowering truth in the digital age with AI-driven fact verification</p>
     </div>
 
-    <div class="info-card">
-        <h2>How It Works</h2>
-        <p>When you submit a claim, our system:</p>
-        <ol>
-            <li>Processes your claim to identify key facts and entities</li>
-            <li>Queries multiple fact-checking APIs and databases</li>
-            <li>Analyzes and aggregates the results from various sources</li>
-            <li>Calculates a truthfulness score based on available fact-checks</li>
-            <li>Presents you with verified information and links to original sources</li>
-        </ol>
+    <div class="about-cards">
+        <div class="card card-primary">
+            <div class="card-icon">
+                <i class="fas fa-bullseye"></i>
+            </div>
+            <h2>Our Mission</h2>
+            <p>Veritify AI Vigilance combats misinformation by providing users with access to verified fact-checks from
+                reputable sources. We aggregate results from established fact-checking organizations to help you
+                determine the truthfulness of claims with confidence.</p>
+        </div>
+
+        <div class="card card-secondary">
+            <div class="card-icon">
+                <i class="fas fa-cogs"></i>
+            </div>
+            <h2>How It Works</h2>
+            <ol class="process-list">
+                <li><span class="step-number">1</span> <strong>Process:</strong> Analyze your claim using NLP to
+                    identify key facts and entities</li>
+                <li><span class="step-number">2</span> <strong>Query:</strong> Search multiple fact-checking APIs and
+                    databases</li>
+                <li><span class="step-number">3</span> <strong>Analyze:</strong> Aggregate results from various credible
+                    sources</li>
+                <li><span class="step-number">4</span> <strong>Score:</strong> Calculate truthfulness score based on
+                    credibility and relevance</li>
+                <li><span class="step-number">5</span> <strong>Present:</strong> Display verified information with links
+                    to original sources</li>
+            </ol>
+        </div>
+
+        <div class="card card-success">
+            <div class="card-icon">
+                <i class="fas fa-check-double"></i>
+            </div>
+            <h2>Credible Sources</h2>
+            <p>We integrate with established fact-checking organizations, including:</p>
+            <ul class="sources-list">
+                <li><i class="fas fa-link"></i> Google Fact Check Tools</li>
+                <li><i class="fas fa-link"></i> FactCheck.org</li>
+                <li><i class="fas fa-link"></i> PolitiFact</li>
+                <li><i class="fas fa-link"></i> Snopes</li>
+                <li><i class="fas fa-link"></i> Real-time News APIs</li>
+            </ul>
+        </div>
+
+        <div class="card card-info">
+            <div class="card-icon">
+                <i class="fas fa-chart-bar"></i>
+            </div>
+            <h2>Understanding Scores</h2>
+            <p>Our truthfulness scores range from 0-100, with color-coded indicators:</p>
+            <div class="score-guide">
+                <div class="score-item score-high">
+                    <strong>80-100:</strong> Claim appears to be mostly true
+                </div>
+                <div class="score-item score-medium-high">
+                    <strong>60-79:</strong> Claim contains truth with minor inaccuracies
+                </div>
+                <div class="score-item score-medium">
+                    <strong>40-59:</strong> Mixed truthfulness, needs verification
+                </div>
+                <div class="score-item score-medium-low">
+                    <strong>20-39:</strong> Claim appears to be mostly false
+                </div>
+                <div class="score-item score-low">
+                    <strong>0-19:</strong> Claim is disputed or false
+                </div>
+            </div>
+        </div>
+
+        <div class="card card-warning">
+            <div class="card-icon">
+                <i class="fas fa-lightbulb"></i>
+            </div>
+            <h2>Key Features</h2>
+            <ul class="features-list">
+                <li><i class="fas fa-check"></i> Top-K article ranking for precision results</li>
+                <li><i class="fas fa-check"></i> Credibility-aware scoring system</li>
+                <li><i class="fas fa-check"></i> Multi-metric relevance analysis (semantic, textual, NLP)</li>
+                <li><i class="fas fa-check"></i> Location and genre classification</li>
+                <li><i class="fas fa-check"></i> Detailed source attribution and links</li>
+                <li><i class="fas fa-check"></i> Real-time news integration</li>
+            </ul>
+        </div>
     </div>
 
-    <div class="info-card">
-        <h2>Our Sources</h2>
-        <p>We integrate with established fact-checking organizations, including:</p>
-        <ul>
-            <li>Google Fact Check Tools</li>
-            <li>FactCheck.org</li>
-            <li>PolitiFact</li>
-            <li>Snopes</li>
-            <li>Other reputable fact-checking sources</li>
-        </ul>
-    </div>
-
-    <div class="info-card">
-        <h2>Understanding Scores</h2>
-        <p>Our truthfulness scores range from 0-100:</p>
-        <ul>
-            <li><strong>80-100:</strong> Claim appears to be mostly true</li>
-            <li><strong>60-79:</strong> Claim contains some truth but may have inaccuracies</li>
-            <li><strong>40-59:</strong> Claim has mixed truthfulness</li>
-            <li><strong>20-39:</strong> Claim appears to be mostly false</li>
-            <li><strong>0-19:</strong> Claim is disputed or labeled as false</li>
-        </ul>
+    <div class="about-footer">
+        <h2>Get Started</h2>
+        <p>Ready to verify claims and fight misinformation?</p>
+        <a href="/" class="btn btn-primary btn-large">
+            <i class="fas fa-play-circle"></i>
+            Start Verifying Now
+        </a>
     </div>
 </section>
 {% endblock %}

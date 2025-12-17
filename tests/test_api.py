@@ -25,14 +25,14 @@ class TestAPI:
         """Test that index page loads correctly"""
         response = client.get('/')
         assert response.status_code == 200
-        assert b'TruthTrack AI Vigilance' in response.data
+        assert b'Veritify AI Vigilance' in response.data
         assert b'Verify the Truth with AI' in response.data
 
     def test_about_page(self, client):
         """Test that about page loads correctly"""
         response = client.get('/about')
         assert response.status_code == 200
-        assert b'About TruthTrack AI Vigilance' in response.data
+        assert b'About Veritify AI Vigilance' in response.data
         assert b'Our Mission' in response.data
 
     def test_verify_endpoint_missing_claim(self, client):
