@@ -1,5 +1,5 @@
 // ============================================
-// TRUTHTRACK - Main JavaScript
+// Veritify - Main JavaScript
 // Glass & Truth Interactions
 // ============================================
 
