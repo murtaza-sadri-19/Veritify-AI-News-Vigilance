@@ -1,83 +1,89 @@
-// Main JavaScript file for TruthTrack - Enhanced UI/UX
+// ============================================
+// Veritify - Main JavaScript
+// Glass & Truth Interactions
+// ============================================
 
-document.addEventListener('DOMContentLoaded', function() {
-    initializeNavigation();
-    setupMobileMenu();
-    setupCharacterCounter();
-    setupAccessibility();
+document.addEventListener('DOMContentLoaded', function () {
+    initializeGlassEffects();
+    initializeNavbar();
+    initializeSearchCard();
 });
 
-/**
- * Initialize navigation active state
- */
-function initializeNavigation() {
-    const currentPath = window.location.pathname;
-    const navLinks = document.querySelectorAll('.nav-link');
+// ============================================
+// GLASSMORPHIC INTERACTIONS
+// ============================================
 
-    navLinks.forEach(link => {
-        const href = link.getAttribute('href');
-        if (href === currentPath || (currentPath === '/' && href === '/')) {
-            link.style.borderBottomColor = 'var(--primary-color)';
-        }
+function initializeGlassEffects() {
+    // Add subtle parallax effect to glass cards
+    const glassElements = document.querySelectorAll('.search-card, .feature-card');
+
+    document.addEventListener('mousemove', (e) => {
+        const mouseX = e.clientX / window.innerWidth;
+        const mouseY = e.clientY / window.innerHeight;
+
+        glassElements.forEach((el, index) => {
+            const speed = (index + 1) * 0.5;
+            const x = (mouseX - 0.5) * speed;
+            const y = (mouseY - 0.5) * speed;
+
+            el.style.transform = `translate(${x}px, ${y}px)`;
+        });
     });
 }
 
-/**
- * Setup mobile menu toggle
- */
-function setupMobileMenu() {
-    const hamburger = document.querySelector('.hamburger');
-    const navMenu = document.querySelector('.navbar-menu');
+// ============================================
+// NAVBAR INTERACTIONS
+// ============================================
 
-    if (hamburger) {
-        hamburger.addEventListener('click', function() {
-            navMenu.classList.toggle('active');
-            
-            // Animate hamburger
-            const spans = hamburger.querySelectorAll('span');
-            spans.forEach((span, index) => {
-                if (navMenu.classList.contains('active')) {
-                    if (index === 0) span.style.transform = 'rotate(45deg) translateY(10px)';
-                    if (index === 1) span.style.opacity = '0';
-                    if (index === 2) span.style.transform = 'rotate(-45deg) translateY(-10px)';
-                } else {
-                    span.style.transform = 'none';
-                    span.style.opacity = '1';
-                }
-            });
-        });
+function initializeNavbar() {
+    const navbar = document.querySelector('.navbar');
+    let lastScroll = 0;
 
-        // Close menu when clicking on a link
-        document.querySelectorAll('.nav-link').forEach(link => {
-            link.addEventListener('click', () => {
-                navMenu.classList.remove('active');
-                hamburger.querySelectorAll('span').forEach(span => {
-                    span.style.transform = 'none';
-                    span.style.opacity = '1';
-                });
-            });
-        });
-    }
+    window.addEventListener('scroll', () => {
+        const currentScroll = window.pageYOffset;
+
+        // Add shadow on scroll
+        if (currentScroll > 50) {
+            navbar.style.boxShadow = '0 8px 32px 0 rgba(31, 38, 135, 0.25)';
+        } else {
+            navbar.style.boxShadow = '0 8px 32px 0 rgba(31, 38, 135, 0.15)';
+        }
+
+        lastScroll = currentScroll;
+    });
 }
 
-/**
- * Setup character counter for claim input
- */
-function setupCharacterCounter() {
-    const claimInput = document.getElementById('claim-input');
-    const charCount = document.getElementById('char-count');
+// ============================================
+// SEARCH CARD INTERACTIONS
+// ============================================
 
-    if (claimInput && charCount) {
-        claimInput.addEventListener('input', function() {
-            charCount.textContent = this.value.length;
-            
-            // Max length feedback
-            if (this.value.length >= 500) {
-                this.value = this.value.substring(0, 500);
-                charCount.textContent = '500';
-            }
-        });
-    }
+function initializeSearchCard() {
+    const searchInput = document.getElementById('claim-input');
+    const searchCard = document.querySelector('.search-card');
+
+    if (!searchInput || !searchCard) return;
+
+    // Add shimmer effect on focus
+    searchInput.addEventListener('focus', () => {
+        searchCard.classList.add('focused');
+    });
+
+    searchInput.addEventListener('blur', () => {
+        searchCard.classList.remove('focused');
+    });
+
+    // Character count and validation
+    searchInput.addEventListener('input', (e) => {
+        const length = e.target.value.length;
+
+        if (length > 500) {
+            searchCard.style.borderColor = '#e53935';
+        } else if (length > 0) {
+            searchCard.style.borderColor = 'var(--primary-blue)';
+        } else {
+            searchCard.style.borderColor = '';
+        }
+    });
 }
 
 /**
