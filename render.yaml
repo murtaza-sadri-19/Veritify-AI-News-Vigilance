@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: truthtrack-api
+    name: Veritify-api
     env: python
     # Pin the Python version for consistent builds
     pythonVersion: '3.11'

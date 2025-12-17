@@ -1,8 +1,8 @@
-# TruthTrack - Glass & Truth Design System
+# Veritify - Glass & Truth Design System
 ## Frontend Implementation Documentation
 
 ### Overview
-This implementation delivers a sophisticated, journalistic home page for TruthTrack that embodies the "Glass & Truth" aesthetic - combining glassmorphism with editorial credibility inspired by "The New York Times meets Apple."
+This implementation delivers a sophisticated, journalistic home page for Veritify that embodies the "Glass & Truth" aesthetic - combining glassmorphism with editorial credibility inspired by "The New York Times meets Apple."
 
 ---
 
@@ -52,7 +52,7 @@ box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
 
 **Features:**
 - Sticky positioning with enhanced shadow on scroll
-- Logo: Serif "TruthTrack" + gradient "AI" badge
+- Logo: Serif "Veritify" + gradient "AI" badge
 - Gradient pill button for Sign Up
 - Smooth transitions on all interactions
 

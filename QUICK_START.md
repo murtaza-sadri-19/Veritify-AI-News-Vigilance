@@ -1,4 +1,4 @@
-# TruthTrack - Quick Start Guide
+# Veritify - Quick Start Guide
 
 ## 🚀 View the Design
 
@@ -69,7 +69,7 @@ box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
 ## 🎯 Component Showcase
 
 ### Navbar
-- Logo: "TruthTrack" (serif) + "AI" badge (gradient)
+- Logo: "Veritify" (serif) + "AI" badge (gradient)
 - Links: "Log In" text link
 - Button: Gradient "Sign Up" pill button
 
