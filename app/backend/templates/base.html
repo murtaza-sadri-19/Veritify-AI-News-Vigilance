@@ -1,20 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}TruthTrack AI - Intelligent Fact Checking{% endblock %}</title>
+    <title>{% block title %}Veritify AI - Intelligent Fact Checking{% endblock %}</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
     {% block extra_css %}{% endblock %}
 </head>
+
 <body>
     <header class="navbar">
         <div class="navbar-container">
             <div class="navbar-brand">
                 <a href="/" class="logo">
                     <i class="fas fa-shield-alt"></i>
-                    <span class="logo-text">TruthTrack</span>
+                    <span class="logo-text">Veritify</span>
                 </a>
             </div>
             <nav class="navbar-menu">
@@ -42,7 +51,7 @@
             <div class="footer-content">
                 <div class="footer-section">
                     <h3>About</h3>
-                    <p>TruthTrack AI helps combat misinformation by verifying claims against reliable sources.</p>
+                    <p>Veritify AI helps combat misinformation by verifying claims against reliable sources.</p>
                 </div>
                 <div class="footer-section">
                     <h3>Links</h3>
@@ -60,7 +69,7 @@
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2025 TruthTrack AI. All rights reserved. | Combating Misinformation Together</p>
+                <p>&copy; 2025 Veritify AI. All rights reserved. | Combating Misinformation Together</p>
             </div>
         </div>
     </footer>
@@ -69,4 +78,5 @@
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     {% endblock %}
 </body>
+
 </html>

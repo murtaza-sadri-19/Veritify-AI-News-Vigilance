@@ -1,8 +1,8 @@
-# TruthTrack AI News Vigilance
+# Veritify AI News Vigilance
 
-TruthTrack AI News Vigilance is a web application designed to combat misinformation by allowing users to verify claims against reputable fact-checking sources. The platform provides trustworthiness scores and links to original fact-check sources to help users make informed judgments about the information they encounter.
+Veritify AI News Vigilance is a web application designed to combat misinformation by allowing users to verify claims against reputable fact-checking sources. The platform provides trustworthiness scores and links to original fact-check sources to help users make informed judgments about the information they encounter.
 
-![TruthTrack Logo](static/img/logo.png)
+![Veritify Logo](static/img/logo.png)
 
 ## Features
 
@@ -34,8 +34,8 @@ TruthTrack AI News Vigilance is a web application designed to combat misinformat
 1. **Clone the repository**
 
 ```bash
-git clone https://github.com/yourusername/Truthtrack-AI-News-Vigilance.git
-cd Truthtrack-AI-News-Vigilance 
+git clone https://github.com/yourusername/Veritify-AI-News-Vigilance.git
+cd Veritify-AI-News-Vigilance 
 ```
 
 2. **Create a virtual evironment**
@@ -76,8 +76,8 @@ SECRET_KEY=your_secret_key_here
 DEBUG=True
 
 # MongoDB configuration (optional)
-MONGODB_URI=mongodb://localhost:27017/truthtrack
-MONGODB_DB=truthtrack
+MONGODB_URI=mongodb://localhost:27017/Veritify
+MONGODB_DB=Veritify
 
 # API Keys for fact checking services
 RAPIDAPI_KEY=your_rapid_api_key_here
@@ -151,7 +151,7 @@ Response:
 
 ### Trustworthiness Scoring System
 
-TruthTrack uses a 0-100 scoring system to indicate the trustworthiness of claims:
+Veritify uses a 0-100 scoring system to indicate the trustworthiness of claims:
 
 - 80-100: Claim appears to be mostly true
 - 60-79: Claim contains some truth but may have inaccuracies

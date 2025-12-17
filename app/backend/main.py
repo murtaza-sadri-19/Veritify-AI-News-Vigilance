@@ -18,7 +18,7 @@ logging.basicConfig(
     level=LOG_LEVEL,
     format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
 )
-logger = logging.getLogger("TruthTrackAPI")
+logger = logging.getLogger("VeritifyAPI")
 
 
 @dataclass
@@ -122,7 +122,7 @@ def health_check():
     """Health check endpoint."""
     return jsonify({
         "status": "healthy",
-        "service": "TruthTrack Fact-Check API",
+        "service": "Veritify Fact-Check API",
         "version": "2.0.0",
     }), 200
 
@@ -139,6 +139,12 @@ def about():
     return render_template("about.html")
 
 
+@app.route("/demo")
+def demo():
+    """Serve the dashboard demo page."""
+    return render_template("dashboard_demo.html")
+
+
 # ── App Entry Point ───────────────────────────────────────────────
 
 if __name__ == "__main__":
@@ -147,7 +153,7 @@ if __name__ == "__main__":
     debug_mode = env != "production"
 
     logger.info(
-        f"Starting TruthTrack API | env={env} | port={port} | debug={debug_mode}"
+        f"Starting Veritify API | env={env} | port={port} | debug={debug_mode}"
     )
 
     app.run(
