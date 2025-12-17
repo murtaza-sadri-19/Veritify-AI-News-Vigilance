@@ -86,35 +86,116 @@ function initializeSearchCard() {
     });
 }
 
-// Helper functions
-function formatDate(dateString) {
-    if (!dateString) return '';
+/**
+ * Setup accessibility features
+ */
+function setupAccessibility() {
+    // Add keyboard navigation support
+    document.addEventListener('keydown', function(event) {
+        // Skip to main content with Alt+M
+        if (event.altKey && event.key === 'm') {
+            event.preventDefault();
+            const main = document.querySelector('main');
+            if (main) main.focus();
+        }
+    });
 
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
+    // Ensure buttons are keyboard accessible
+    document.querySelectorAll('button').forEach(button => {
+        button.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter' || event.key === ' ') {
+                this.click();
+            }
+        });
     });
 }
 
-function showNotification(message, type = 'info') {
+/**
+ * Helper function to escape HTML
+ */
+function escapeHtml(text) {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, m => map[m]);
+}
+
+/**
+ * Helper function to format date
+ */
+function formatDate(dateString) {
+    if (!dateString) return '';
+
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return dateString;
+
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    } catch (e) {
+        return dateString;
+    }
+}
+
+/**
+ * Show notification with auto-dismiss
+ */
+function showNotification(message, type = 'info', duration = 5000) {
+    // Remove existing notifications of the same type
+    const existingNotifications = document.querySelectorAll(`.notification.${type}`);
+    existingNotifications.forEach(n => {
+        n.classList.remove('show');
+        setTimeout(() => n.remove(), 300);
+    });
+
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;
-    notification.textContent = message;
+    notification.innerHTML = `
+        <span>${escapeHtml(message)}</span>
+        <button class="notification-close" aria-label="Close notification">×</button>
+    `;
 
     document.body.appendChild(notification);
 
-    // Trigger animation
+    // Show notification with animation
     setTimeout(() => {
         notification.classList.add('show');
     }, 10);
 
-    // Auto remove after 5 seconds
-    setTimeout(() => {
+    // Close button handler
+    notification.querySelector('.notification-close').addEventListener('click', () => {
         notification.classList.remove('show');
-        setTimeout(() => {
-            document.body.removeChild(notification);
-        }, 300);
-    }, 5000);
+        setTimeout(() => notification.remove(), 300);
+    });
+
+    // Auto remove after duration
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.classList.remove('show');
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 300);
+        }
+    }, duration);
+}
+
+/**
+ * Smooth scroll to element
+ */
+function smoothScrollTo(element) {
+    if (element) {
+        element.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+        });
+    }
 }
