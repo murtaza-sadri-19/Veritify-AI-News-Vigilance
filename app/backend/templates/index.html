@@ -711,40 +711,22 @@
                     </div>
 
                     <!-- ================================================================== -->
-                    <!-- ZONE 2: The "Trust Metrics" Grid -->
+                    <!-- ZONE 2: Grand Verification Score -->
                     <!-- ================================================================== -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        
-                        <!-- Card 1: Confidence Score -->
-                        <div class="dashboard-card-glass border border-gray-200 rounded-xl p-6 shadow-md flex flex-col justify-between">
-                            <div class="flex items-center gap-2 text-gray-500 mb-2">
-                                <svg class="w-5 h-5" style="width: 20px; height: 20px; min-width: 20px; min-height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                                </svg>
-                                <span class="font-semibold text-sm uppercase tracking-wider">Confidence Score</span>
-                            </div>
-                            <div class="mb-3">
-                                <div class="text-xs text-gray-500 mb-1">AI Confidence</div>
-                                <div class="text-5xl font-black text-gray-900">${confidenceScore}%</div>
-                            </div>
-                            <!-- Progress Bar -->
-                            <div class="w-full bg-gray-100 h-3 rounded-full overflow-hidden">
-                                <div class="${progressColor} h-full rounded-full transition-all duration-500" style="width: ${confidenceScore}%"></div>
-                            </div>
+                    <div class="dashboard-card-glass border border-gray-200 rounded-xl p-8 shadow-md flex flex-col justify-between">
+                        <div class="flex items-center gap-2 text-gray-500 mb-2">
+                            <svg class="w-5 h-5" style="width: 20px; height: 20px; min-width: 20px; min-height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                            </svg>
+                            <span class="font-semibold text-sm uppercase tracking-wider">Verification Score</span>
                         </div>
-
-                        <!-- Card 2: Leitforce Scores -->
-                        <div class="dashboard-card-glass border border-gray-200 rounded-xl p-6 shadow-md">
-                            <p class="text-gray-500 font-semibold text-sm uppercase tracking-wider mb-2">Leitforce Scores</p>
-                            <p class="text-4xl font-bold text-gray-900">${leitforcScore || 60}%</p>
-                            <p class="text-sm text-gray-400 mt-2">Source reliability index</p>
+                        <div class="mb-4">
+                            <div class="text-sm text-gray-500 mb-2">Overall Confidence</div>
+                            <div class="text-6xl font-black text-gray-900">${confidenceScore}%</div>
                         </div>
-
-                        <!-- Card 3: Multiciting Scores -->
-                        <div class="dashboard-card-glass border border-gray-200 rounded-xl p-6 shadow-md">
-                            <p class="text-gray-500 font-semibold text-sm uppercase tracking-wider mb-2">Multiciting Scores</p>
-                            <p class="text-4xl font-bold text-gray-900">${multicitingScore || 21}</p>
-                            <p class="text-sm text-gray-400 mt-2">Cross-reference frequency</p>
+                        <!-- Progress Bar -->
+                        <div class="w-full bg-gray-100 h-4 rounded-full overflow-hidden">
+                            <div class="${progressColor} h-full rounded-full transition-all duration-500" style="width: ${confidenceScore}%"></div>
                         </div>
                     </div>
 
