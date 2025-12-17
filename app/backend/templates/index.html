@@ -757,7 +757,7 @@
                         </h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             ${sources.map(source => `
-                                <div class="group dashboard-card-glass border border-gray-200 rounded-lg p-5 hover:border-blue-400 hover:shadow-lg transition-all duration-200 cursor-pointer">
+                                <div class="group dashboard-card-glass border border-gray-200 rounded-lg p-5 hover:border-blue-400 hover:shadow-lg transition-all duration-200">
                                     <div class="flex justify-between items-start mb-3">
                                         <div>
                                             <p class="font-bold text-gray-900">${escapeHtml(source.name)}</p>
@@ -770,12 +770,12 @@
                                     <p class="text-sm text-gray-600 line-clamp-3 leading-relaxed mb-4">
                                         ${escapeHtml(source.snippet)}
                                     </p>
-                                    <div class="flex items-center text-blue-600 font-semibold text-xs group-hover:underline">
+                                    <a href="${source.url}" target="_blank" rel="noopener noreferrer" class="flex items-center text-blue-600 font-semibold text-xs hover:underline group-hover:text-blue-700 transition-colors">
                                         Read Source
                                         <svg class="w-3 h-3 ml-1" style="width: 12px; height: 12px; min-width: 12px; min-height: 12px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                                         </svg>
-                                    </div>
+                                    </a>
                                 </div>
                             `).join('')}
                         </div>
