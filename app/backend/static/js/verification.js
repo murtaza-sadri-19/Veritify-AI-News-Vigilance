@@ -1,6 +1,6 @@
 // Verification functionality for TruthTrack
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const verifyButton = document.getElementById('verify-button');
     const claimInput = document.getElementById('claim-input');
     const resultContainer = document.getElementById('result-container');
@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
         verifyButton.addEventListener('click', verifyFact);
 
         // Allow Enter key to trigger verification
-        claimInput.addEventListener('keypress', function(e) {
+        claimInput.addEventListener('keypress', function (e) {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 verifyFact();
@@ -35,7 +35,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Disable button and show loading state
         verifyButton.disabled = true;
-        verifyButton.textContent = 'Verifying...';
+        verifyButton.classList.add('loading');
+        const originalHTML = verifyButton.innerHTML;
+        verifyButton.innerHTML = `
+            <svg class="verify-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <circle cx="12" cy="12" r="10"></circle>
+            </svg>
+            Verifying...
+        `;
 
         resultContainer.innerHTML = `
             <div class="loading">
@@ -43,7 +50,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 <p>Checking facts... This may take a moment.</p>
             </div>
         `;
-        resultsSection.classList.add('active');
+        resultsSection.style.display = 'block';
+
+        // Smooth scroll to results
+        resultsSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
         // Call the API
         fetch('/api/verify', {
@@ -53,38 +63,45 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             body: JSON.stringify({ claim: claim }),
         })
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(err => {
-                    throw new Error(err.error || `HTTP ${response.status}`);
-                });
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                displayResults(data.result, claim);
-                showNotification('Fact-check completed!', 'success');
-            } else {
-                throw new Error(data.error || 'Unknown error occurred');
-            }
-        })
-        .catch(error => {
-            console.error('Verification error:', error);
-            resultContainer.innerHTML = `
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.error || `HTTP ${response.status}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    displayResults(data.result, claim);
+                    showNotification('Fact-check completed!', 'success');
+                } else {
+                    throw new Error(data.error || 'Unknown error occurred');
+                }
+            })
+            .catch(error => {
+                console.error('Verification error:', error);
+                resultContainer.innerHTML = `
                 <div class="error">
                     <h3>Error occurred</h3>
                     <p>${error.message}</p>
                     <button onclick="location.reload()" class="btn primary">Try Again</button>
                 </div>
             `;
-            showNotification('Error during fact-check', 'error');
-        })
-        .finally(() => {
-            // Re-enable button
-            verifyButton.disabled = false;
-            verifyButton.textContent = 'Verify Claim';
-        });
+                showNotification('Error during fact-check', 'error');
+            })
+            .finally(() => {
+                // Re-enable button
+                verifyButton.disabled = false;
+                verifyButton.classList.remove('loading');
+                verifyButton.innerHTML = `
+                <svg class="verify-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                Verify
+            `;
+            });
     }
 
     function displayResults(result, originalClaim) {

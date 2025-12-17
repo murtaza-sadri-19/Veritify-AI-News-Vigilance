@@ -1,6 +1,6 @@
 import os
-from flask import Flask, request, jsonify
-from flask_cors import CORS # <--- NEW IMPORT
+from flask import Flask, request, jsonify, render_template
+from flask_cors import CORS 
 from dotenv import load_dotenv
 from services import FactCheckService
 
@@ -8,9 +8,23 @@ from services import FactCheckService
 load_dotenv()
 
 # ── Flask App Setup ───────────────────────────────────────────────
+# Flask will automatically look for 'templates' and 'static' folders 
+# in the same directory as this file (app/backend/)
 app = Flask(__name__)
-CORS(app) # <--- Enable CORS for the React frontend
+CORS(app) 
 fact_check_service = FactCheckService()
+
+
+# ── UI Routes (These were missing) ────────────────────────────────
+@app.route("/")
+def index():
+    """Render the homepage"""
+    return render_template("index.html")
+
+@app.route("/about")
+def about():
+    """Render the about page"""
+    return render_template("about.html")
 
 
 # ── API Routes ────────────────────────────────────────────────────
@@ -20,25 +34,18 @@ def verify_claim():
     try:
         data = request.get_json()
         if not data or "claim" not in data:
-            return jsonify({"error": "Missing 'claim' field in request"}), 400
+            return jsonify({"error": "Missing 'claim' field"}), 400
 
         claim = data["claim"].strip()
         if not claim:
             return jsonify({"error": "Claim cannot be empty"}), 400
 
         result = fact_check_service.check_claim(claim)
-
-        return jsonify({
-            "success": True,
-            "result": result
-        })
+        return jsonify(result)
 
     except Exception as e:
-        app.logger.error(f"Error in verify_claim: {str(e)}")
-        return jsonify({
-            "success": False,
-            "error": "Internal server error occurred"
-        }), 500
+        app.logger.error(f"Error processing claim: {str(e)}")
+        return jsonify({"error": "Internal server error"}), 500
 
 
 @app.route("/api/health", methods=["GET"])
