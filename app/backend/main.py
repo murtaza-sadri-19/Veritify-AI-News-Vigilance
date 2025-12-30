@@ -148,7 +148,7 @@ def demo():
 # ── App Entry Point ───────────────────────────────────────────────
 
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", 5000))
+    port = int(os.getenv("PORT", 7860))
     env = os.getenv("FLASK_ENV", "development")
     debug_mode = env != "production"
 
