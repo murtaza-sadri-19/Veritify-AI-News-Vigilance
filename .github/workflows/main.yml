@@ -2,8 +2,7 @@ name: Deploy to Hugging Face Space
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -11,16 +10,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout GitHub repository (no LFS history)
+      - name: Checkout GitHub repo
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
 
-      - name: Deploy to Hugging Face Space (clean snapshot)
+      - name: Install Hugging Face CLI
+        run: pip install -U huggingface_hub
+
+      - name: Upload snapshot to HF Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-            huggingface-cli upload . \
+          huggingface-cli upload . \
             --repo-id murtaza19/TruthTrack \
             --repo-type space \
             --commit-message "Deploy from GitHub CI" \
