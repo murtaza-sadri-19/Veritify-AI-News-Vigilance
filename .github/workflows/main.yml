@@ -20,26 +20,8 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          set -e
-
-          # Git identity
-          git config --global user.email "actions@github.com"
-          git config --global user.name "GitHub Actions"
-
-          # Clone HF Space as a CLEAN repo
-          git clone https://murtaza19:${HF_TOKEN}@huggingface.co/spaces/murtaza19/TruthTrack hf-space
-
-          # Remove everything in HF repo except .git
-          find hf-space -mindepth 1 -maxdepth 1 ! -name ".git" -exec rm -rf {} +
-
-          # Copy CURRENT GitHub working tree into HF Space
-          rsync -av ./ hf-space \
-            --exclude .git \
-            --exclude .github \
-            --exclude hf-space
-
-          # Commit and push
-          cd hf-space
-          git add .
-          git commit -m "Deploy snapshot from GitHub" || echo "No changes to commit"
-          git push
+            huggingface-cli upload . \
+            --repo-id murtaza19/TruthTrack \
+            --repo-type space \
+            --commit-message "Deploy from GitHub CI" \
+            --ignore ".git,.github"

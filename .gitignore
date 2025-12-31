@@ -8,12 +8,3 @@ __pycache__/
 .vscode/
 /venv/
 venv/
-*.png
-*.jpg
-*.jpeg
-*.gif
-*.svg
-*.webp
-*.ico
-*.bmp
-*.tiff
