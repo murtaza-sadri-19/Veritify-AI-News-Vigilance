@@ -16,12 +16,10 @@ jobs:
       - name: Install Hugging Face CLI
         run: pip install -U huggingface_hub
 
-      - name: Upload snapshot to HF Space
+      - name: Upload to Hugging Face Space (binary-safe)
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          huggingface-cli upload . \
-            --repo-id murtaza19/TruthTrack \
+          hf upload murtaza19/TruthTrack . \
             --repo-type space \
-            --commit-message "Deploy from GitHub CI" \
-            --ignore ".git,.github"
+            --commit-message "Deploy from GitHub Actions"
