@@ -1,14 +1,3 @@
-#!/usr/bin/env python3
-"""
-Lightweight News Article Analyzer
-
-This module now focuses only on:
-- Text normalization
-- Optional entity extraction
-- Optional topic/genre detection
-It must NOT decide truth.
-"""
-
 import logging
 from typing import Dict, List, Optional
 

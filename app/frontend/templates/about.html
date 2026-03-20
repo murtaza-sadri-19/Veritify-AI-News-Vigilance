@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}About Us - Veritify{% endblock %}
+{% block extra_css %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/results.css') }}" />
+    <style>
+        .about-hero {
+            min-height: 50vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem 2rem;
+        }
+
+        .about-hero h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2rem, 6vw, 3.5rem);
+            font-weight: 800;
+            color: #111827;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .about-hero p {
+            max-width: 600px;
+            font-size: 1.1rem;
+            color: #6b7280;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        .about-content {
+            max-width: 1000px;
+            margin: 3rem auto;
+            padding: 0 2rem;
+            color: #4b5563;
+            line-height: 1.8;
+        }
+
+        .about-content h2 {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+            color: #111827;
+            margin: 3rem 0 1.5rem;
+        }
+
+        .about-content p {
+            margin-bottom: 1rem;
+            font-size: 1rem;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <section class="about-hero">
+        <h1>About Veritify</h1>
+        <p>We're building the future of fact-checking with artificial intelligence and human-centered design</p>
+    </section>
+
+    <section class="about-content">
+        <h2>Our Mission</h2>
+        <p>
+            In an era of information overload and misinformation, Veritify exists to empower people with the tools
+            they need to verify facts quickly and accurately. We believe that access to truth should be instant,
+            transparent, and accessible to everyone.
+        </p>
+
+        <h2>How It Works</h2>
+        <p>
+            Veritify uses advanced Natural Language Processing (NLP) and machine learning models to analyze claims
+            against millions of verified sources. Our two-stage verification pipeline combines lexical and semantic
+            analysis with entailment detection to provide accurate, nuanced verdicts.
+        </p>
+
+        <h2>Our Approach</h2>
+        <p>
+            Unlike simple keyword matching, our AI understands context, sentiment, and factual relationships. We cross-reference
+            claims against trusted news outlets, fact-checking organizations, and academic sources to provide you with
+            comprehensive evidence.
+        </p>
+
+        <h2>Meet the Team</h2>
+        <p>
+            Veritify was built by Aditya Desai and Murtaza Khan, passionate engineers dedicated to combating
+            misinformation through technology. With expertise in machine learning, natural language processing, and
+            full-stack development, we're committed to creating tools that matter.
+        </p>
+
+        <h2>Transparency & Trust</h2>
+        <p>
+            We believe fact-checking should be transparent. That's why we always show you the sources behind our verdicts,
+            the evidence we found, and how confident we are in our analysis. You can verify our work and make informed decisions.
+        </p>
+
+        <div class="team-section" style="margin-top: 3rem;">
+            <div class="team-container">
+                <div class="team-header">
+                    <h2 style="margin-bottom: 0.5rem;">Meet Our Team</h2>
+                </div>
+                <div class="team-grid">
+                    <div class="team-member">
+                        <div class="team-avatar">AD</div>
+                        <div class="team-info">
+                            <div class="team-name">Aditya Desai</div>
+                            <div class="team-role">Co-Founder & NLP Engineer</div>
+                            <p style="margin-top: 0.75rem; color: #6b7280; line-height: 1.5;">
+                                ML specialist with expertise in transformer models, entailment analysis, and information retrieval.
+                                Passionate about building AI systems that help people make informed decisions.
+                            </p>
+                            <div class="team-social">
+                                <a href="#" class="team-social-link" title="LinkedIn">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                        <path
+                                            d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19a.66.66 0 000 .14V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z"
+                                        />
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="team-member">
+                        <div class="team-avatar">MK</div>
+                        <div class="team-info">
+                            <div class="team-name">Murtaza Khan</div>
+                            <div class="team-role">Co-Founder & ML Engineer</div>
+                            <p style="margin-top: 0.75rem; color: #6b7280; line-height: 1.5;">
+                                Full-stack engineer with deep expertise in scaling machine learning systems. Dedicated to creating
+                                user-friendly interfaces for complex AI operations.
+                            </p>
+                            <div class="team-social">
+                                <a href="#" class="team-social-link" title="LinkedIn">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                        <path
+                                            d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93A1.74 1.74 0 0013 14.19a.66.66 0 000 .14V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z"
+                                        />
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock %}

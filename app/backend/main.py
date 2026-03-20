@@ -53,9 +53,9 @@ class RequestContext:
 
 app = Flask(
     __name__,
-    static_folder="static",
+    static_folder="../frontend/static",
     static_url_path="/static",
-    template_folder="templates",
+    template_folder="../frontend/templates",
 )
 CORS(app)  # Enable CORS for all routes
 
