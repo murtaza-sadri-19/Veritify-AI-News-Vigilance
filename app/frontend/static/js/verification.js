@@ -1,457 +1,334 @@
-// ============================================
-// Verification Logic & Dashboard Rendering
-// ============================================
+/**
+ * Veritify AI - Verification Dashboard Component
+ * Built from scratch with strict layout architecture to prevent UI breakage
+ * 
+ * ARCHITECTURE:
+ * - Container with 3 Rigid Vertical Sections (gap-8)
+ * - Section 1: Verdict Banner (Horizontal: Icon + Text)
+ * - Section 2: Metrics Row (3-Column Grid)
+ * - Section 3: Evidence Grid (2-Column Grid)
+ */
 
-const API_BASE_URL = '/api';
+// ============================================================================
+// HELPER UTILITIES
+// ============================================================================
 
-// DOM Elements
-const searchInput = document.querySelector('.search-input');
-const verifyBtn = document.querySelector('.btn-verify');
-const heroSection = document.querySelector('.hero');
-const container = document.querySelector('.results-container');
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
 
-// State
-let isVerifying = false;
-let currentClaim = '';
+function smoothScrollTo(element) {
+    if (element) {
+        element.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+        });
+    }
+}
 
-// ============================================
-// INITIALIZATION
-// ============================================
+function formatDate(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
+}
+
+function showNotification(message, type = 'info') {
+    // Simple notification implementation
+    console.log(`[${type.toUpperCase()}] ${message}`);
+    // You can enhance this with a toast library
+}
+
+// ============================================================================
+// MAIN EVENT LISTENERS
+// ============================================================================
 
 document.addEventListener('DOMContentLoaded', function () {
-    if (verifyBtn) {
-        verifyBtn.addEventListener('click', verifyFact);
-    }
+    const verifyButton = document.getElementById('verify-button');
+    const claimInput = document.getElementById('claim-input');
+    const resultContainer = document.getElementById('result-container');
+    const resultsSection = document.getElementById('results-section');
 
-    if (searchInput) {
-        searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
+    if (verifyButton) {
+        verifyButton.addEventListener('click', verifyFact);
+
+        // Allow Ctrl+Enter or Cmd+Enter to submit
+        claimInput.addEventListener('keydown', function (e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
                 verifyFact();
             }
         });
     }
-});
 
-// ============================================
-// VERIFY FACT - Main API Call
-// ============================================
+    // ============================================================================
+    // FACT VERIFICATION HANDLER
+    // ============================================================================
 
-async function verifyFact() {
-    const claim = searchInput ? searchInput.value.trim() : '';
+    function verifyFact() {
+        const claim = claimInput.value.trim();
 
-    if (!claim) {
-        showAlert('Please enter a claim to verify', 'error');
-        return;
-    }
-
-    if (isVerifying) return;
-
-    currentClaim = claim;
-    isVerifying = true;
-    updateButtonState(true);
-    showLoadingView();
-
-    try {
-        // Simulate API call with timeout (3-8 seconds)
-        const response = await new Promise((resolve) => {
-            setTimeout(() => {
-                resolve({
-                    status: 'success',
-                    data: generateMockResult(claim),
-                });
-            }, 3000 + Math.random() * 5000);
-        });
-
-        if (response.status === 'success') {
-            displayResults(response.data, claim);
-        } else {
-            showAlert('Verification failed. Please try again.', 'error');
-            hideLoadingView();
+        // Validation
+        if (!claim) {
+            showNotification('Please enter a claim to verify', 'warning');
+            claimInput.focus();
+            return;
         }
-    } catch (error) {
-        console.error('Verification error:', error);
-        showAlert('An error occurred during verification', 'error');
-        hideLoadingView();
-    } finally {
-        isVerifying = false;
-        updateButtonState(false);
+
+        if (claim.length < 10) {
+            showNotification('Please enter a more detailed claim (at least 10 characters)', 'warning');
+            claimInput.focus();
+            return;
+        }
+
+        if (claim.length > 500) {
+            showNotification('Claim is too long (max 500 characters)', 'warning');
+            return;
+        }
+
+        // Disable button and show loading
+        verifyButton.disabled = true;
+        const originalText = verifyButton.innerHTML;
+        verifyButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
+
+        resultContainer.innerHTML = `
+            <div class="flex flex-col items-center justify-center p-12 bg-white rounded-xl border border-gray-200">
+                <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mb-4"></div>
+                <p class="text-lg font-medium text-gray-700">Analyzing claim across multiple sources...</p>
+                <p class="text-sm text-gray-500 mt-2">This may take a moment</p>
+            </div>
+        `;
+        resultsSection.style.display = 'block';
+        smoothScrollTo(resultsSection);
+
+        // API call
+        fetch('/api/verify', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ claim: claim }),
+        })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.error || `HTTP ${response.status}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    displayResults(data.result, claim);
+                    showNotification('✓ Fact-check completed!', 'success');
+                } else {
+                    throw new Error(data.error || 'Unknown error occurred');
+                }
+            })
+            .catch(error => {
+                console.error('Verification error:', error);
+                resultContainer.innerHTML = `
+                    <div class="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
+                        <svg class="w-16 h-16 text-red-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <h3 class="text-xl font-bold text-gray-900 mb-2">Error Occurred</h3>
+                        <p class="text-gray-700 mb-4">${escapeHtml(error.message)}</p>
+                        <button onclick="location.reload()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            <i class="fas fa-redo mr-2"></i> Try Again
+                        </button>
+                    </div>
+                `;
+                showNotification('Error during fact-check', 'error');
+            })
+            .finally(() => {
+                verifyButton.disabled = false;
+                verifyButton.innerHTML = originalText;
+            });
     }
-}
 
-// ============================================
-// DISPLAY RESULTS - Dashboard Rendering
-// ============================================
+    // ============================================================================
+    // RESULT RENDERING FUNCTION - PIXEL PERFECT DASHBOARD
+    // ============================================================================
 
-function displayResults(result, originalClaim) {
-    hideLoadingView();
+    function displayResults(result, originalClaim) {
+        // Determine verdict state
+        const verdict = (result.verdict || 'UNVERIFIED').toUpperCase();
+        const isFalse = verdict === 'FALSE';
+        const isTrue = verdict === 'TRUE';
+        const confidencePercent = result.confidence ? Math.round(result.confidence * 100) : 0;
+        const sources = result.evidence || [];
 
-    // Clear previous results
-    const previousResults = document.querySelector('.results-view');
-    if (previousResults) {
-        previousResults.remove();
-    }
+        // Dynamic styling based on verdict
+        const bgColor = isFalse ? 'bg-red-50' : isTrue ? 'bg-green-50' : 'bg-yellow-50';
+        const borderColor = isFalse ? 'border-red-600' : isTrue ? 'border-green-600' : 'border-yellow-600';
+        const textColor = isFalse ? 'text-red-700' : isTrue ? 'text-green-700' : 'text-yellow-700';
+        const iconColor = isFalse ? 'text-red-600' : isTrue ? 'text-green-600' : 'text-yellow-600';
+        const iconBgColor = isFalse ? 'bg-red-100' : isTrue ? 'bg-green-100' : 'bg-yellow-100';
+        const progressColor = isFalse ? 'bg-red-500' : isTrue ? 'bg-green-500' : 'bg-yellow-500';
+        const verdictText = isFalse ? 'CLAIM PROVEN FALSE' : isTrue ? 'CLAIM CONFIRMED TRUE' : 'CLAIM PARTIALLY ACCURATE';
 
-    // Create results view
-    const resultsView = document.createElement('div');
-    resultsView.className = 'results-view fade-in';
-    resultsView.innerHTML = `
-        <div class="results-container">
-            <!-- Verdict Banner -->
-            <div class="verdict-banner ${result.verdict.value}">
-                <div class="verdict-header">
-                    <div class="verdict-icon">${getVerdictIcon(result.verdict.value)}</div>
-                    <div class="verdict-content">
-                        <div class="verdict-label">${result.verdict.label}</div>
-                        <h2>${result.verdict.title}</h2>
+        // SVG Icons
+        const shieldIcon = isFalse
+            ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />'
+            : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />';
+
+        // Build HTML
+        let html = `
+            <div class="animate-in space-y-8">
+
+                <!-- ================================================================== -->
+                <!-- ZONE 1: The Verdict Banner -->
+                <!-- ================================================================== -->
+                <div class="${bgColor} ${borderColor} rounded-xl border-l-[8px] p-8 shadow-sm flex items-start gap-6">
+                    <!-- Icon - LOCKED SIZE -->
+                    <div class="p-3 rounded-full ${iconBgColor} flex-shrink-0">
+                        <svg class="w-10 h-10 ${iconColor}" style="width: 40px; height: 40px; min-width: 40px; min-height: 40px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            ${shieldIcon}
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-4xl font-black uppercase tracking-tight mb-2 ${textColor}">
+                            ${verdictText}
+                        </h1>
+                        <p class="text-xl text-gray-700 font-medium">
+                            Claim: <span class="italic text-gray-600">"${escapeHtml(originalClaim)}"</span>
+                        </p>
                     </div>
                 </div>
-                <div class="verdict-summary">${result.verdict.summary}</div>
-            </div>
 
-            <!-- Trust Metrics -->
-            <div class="trust-metrics">
-                <div class="metric-card">
-                    <div class="metric-label">Source Quality</div>
-                    <div class="metric-value">${result.metrics.sourceQuality}%</div>
-                    <div class="metric-subtitle">Credibility Score</div>
+                <!-- ================================================================== -->
+                <!-- ZONE 2: The "Trust Metrics" Grid -->
+                <!-- ================================================================== -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    
+                    <!-- Card 1: Confidence Score -->
+                    <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm flex flex-col justify-between">
+                        <div class="flex items-center gap-2 text-gray-500 mb-2">
+                            <svg class="w-5 h-5" style="width: 20px; height: 20px; min-width: 20px; min-height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                            </svg>
+                            <span class="font-semibold text-sm uppercase tracking-wider">Confidence Score</span>
+                        </div>
+                        <div class="mb-3">
+                            <div class="text-xs text-gray-500 mb-1">AI Confidence</div>
+                            <div class="text-5xl font-black text-gray-900">${confidencePercent}%</div>
+                        </div>
+                        <!-- Progress Bar -->
+                        <div class="w-full bg-gray-100 h-3 rounded-full overflow-hidden">
+                            <div class="${progressColor} h-full rounded-full transition-all duration-500" style="width: ${confidencePercent}%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Card 2: Sources Analyzed -->
+                    <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                        <p class="text-gray-500 font-semibold text-sm uppercase tracking-wider mb-2">Sources Analyzed</p>
+                        <p class="text-4xl font-bold text-gray-900">${sources.length}</p>
+                        <p class="text-sm text-gray-400 mt-2">Cross-referenced sources</p>
+                    </div>
+
+                    <!-- Card 3: Bias Leaning -->
+                    <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                        <p class="text-gray-500 font-semibold text-sm uppercase tracking-wider mb-2">Bias Leaning</p>
+                        <p class="text-2xl font-bold text-gray-900">${result.bias || 'Neutral / Scientific'}</p>
+                        <div class="flex gap-1 mt-3">
+                            <div class="h-2 flex-1 bg-blue-200 rounded-l-full"></div>
+                            <div class="h-2 flex-1 bg-gray-400"></div>
+                            <div class="h-2 flex-1 bg-red-200 rounded-r-full"></div>
+                        </div>
+                    </div>
                 </div>
-                <div class="metric-card">
-                    <div class="metric-label">Evidence Found</div>
-                    <div class="metric-value">${result.metrics.evidenceCount}</div>
-                    <div class="metric-subtitle">Supporting Sources</div>
+
+                <!-- ================================================================== -->
+                <!-- ZONE 3: Evidence Grid -->
+                <!-- ================================================================== -->
+                <div>
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-[0.2em] mb-6">
+                        PRIMARY EVIDENCE SOURCES
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        ${renderEvidenceSources(sources)}
+                    </div>
                 </div>
-                <div class="metric-card">
-                    <div class="metric-label">Verdict Confidence</div>
-                    <div class="metric-value">${result.metrics.confidence}%</div>
-                    <div class="metric-subtitle">Analysis Confidence</div>
-                </div>
+
             </div>
+        `;
 
-            <!-- Supporting Evidence -->
-            ${renderEvidenceSection(result.evidence.supporting, 'Supporting Evidence')}
+        resultContainer.innerHTML = html;
 
-            <!-- Contradicting Evidence -->
-            ${renderEvidenceSection(result.evidence.contradicting, 'Contradicting Evidence')}
-
-            <!-- Related Articles -->
-            ${renderRelatedArticles(result.relatedArticles)}
-
-            <!-- New Search Button -->
-            <div style="text-align: center; margin: 3rem 0;">
-                <button onclick="resetSearch()" class="btn-verify">
-                    <span>Search Again</span>
-                </button>
-            </div>
-        </div>
-    `;
-
-    // Insert results view
-    if (heroSection && container) {
-        container.innerHTML = '';
-        container.appendChild(resultsView);
-    }
-
-    // Scroll to results
-    setTimeout(() => {
-        resultsView.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
-}
-
-// ============================================
-// EVIDENCE SECTION RENDERER
-// ============================================
-
-function renderEvidenceSection(evidenceList, title) {
-    if (!evidenceList || evidenceList.length === 0) {
-        return '';
-    }
-
-    const evidenceHTML = evidenceList
-        .map(
-            (evidence) => `
-        <div class="evidence-card">
-            <div class="evidence-header">
-                <div class="source-icon">${getSourceInitials(evidence.source)}</div>
-                <div class="evidence-info">
-                    <div class="source-name">${evidence.source}</div>
-                    <div class="source-date">${formatDate(evidence.date)}</div>
-                </div>
-                <div class="stance-badge ${evidence.stance.toLowerCase()}">
-                    ${capitalizeFirst(evidence.stance)}
-                </div>
-            </div>
-            <div class="evidence-text">${evidence.excerpt}</div>
-            <div class="score-bar">
-                <div class="score-fill" style="width: ${evidence.relevanceScore}%"></div>
-            </div>
-        </div>
-    `
-        )
-        .join('');
-
-    return `
-        <div class="evidence-section">
-            <h3 class="section-heading">
-                ${title}
-                <span style="font-size: 0.9em; color: #9ca3af;">(${evidenceList.length})</span>
-            </h3>
-            <div class="evidence-grid">
-                ${evidenceHTML}
-            </div>
-        </div>
-    `;
-}
-
-// ============================================
-// RELATED ARTICLES SECTION
-// ============================================
-
-function renderRelatedArticles(articles) {
-    if (!articles || articles.length === 0) {
-        return '';
-    }
-
-    const articlesHTML = articles
-        .slice(0, 4)
-        .map(
-            (article) => `
-        <div class="evidence-card" style="cursor: pointer;">
-            <div class="evidence-header">
-                <div class="source-icon" style="background: linear-gradient(135deg, #8b5cf6, #06b6d4);">
-                    ${getSourceInitials(article.source)}
-                </div>
-                <div class="evidence-info">
-                    <div class="source-name">${article.title}</div>
-                    <div class="source-date">${article.source} • ${formatDate(article.date)}</div>
-                </div>
-            </div>
-            <div class="evidence-text">${article.snippet}</div>
-        </div>
-    `
-        )
-        .join('');
-
-    return `
-        <div class="evidence-section">
-            <h3 class="section-heading">
-                Related Articles
-                <span style="font-size: 0.9em; color: #9ca3af;">(${articles.length})</span>
-            </h3>
-            <div class="evidence-grid">
-                ${articlesHTML}
-            </div>
-        </div>
-    `;
-}
-
-// ============================================
-// LOADING VIEW
-// ============================================
-
-function showLoadingView() {
-    const loadingView = document.createElement('div');
-    loadingView.className = 'loading-view fade-in';
-    loadingView.innerHTML = `
-        <div style="text-align: center; padding: 3rem;">
-            <div class="loading-spinner"></div>
-            <p style="color: #6b7280; font-size: 1.125rem; margin-top: 1.5rem;">
-                Verifying your claim...
-            </p>
-            <p style="color: #9ca3af; font-size: 0.875rem; margin-top: 0.5rem;">
-                Scanning news sources and fact-checking databases
-            </p>
-        </div>
-    `;
-
-    if (container) {
-        container.innerHTML = '';
-        container.appendChild(loadingView);
-    }
-}
-
-function hideLoadingView() {
-    const loadingView = document.querySelector('.loading-view');
-    if (loadingView) {
-        loadingView.style.opacity = '0';
-        setTimeout(() => loadingView.remove(), 300);
-    }
-}
-
-// ============================================
-// UTILITY FUNCTIONS
-// ============================================
-
-function resetSearch() {
-    if (searchInput) searchInput.value = '';
-    if (container) container.innerHTML = '';
-    if (heroSection) {
+        // Smooth scroll to results
         setTimeout(() => {
-            heroSection.scrollIntoView({ behavior: 'smooth' });
+            smoothScrollTo(resultsSection);
         }, 100);
     }
-}
 
-function getVerdictIcon(verdict) {
-    const icons = {
-        true: '✓',
-        false: '✗',
-        partial: '⚠',
-        unclear: '?',
-        nosources: '—',
-    };
-    return icons[verdict] || '?';
-}
+    // ============================================================================
+    // EVIDENCE SOURCES RENDERER
+    // ============================================================================
 
-function getSourceInitials(source) {
-    return source
-        .split(' ')
-        .map((word) => word[0])
-        .join('')
-        .toUpperCase()
-        .slice(0, 2);
-}
-
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diff = now - date;
-
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    if (days < 1) return 'Today';
-    if (days < 7) return `${days} day${days > 1 ? 's' : ''} ago`;
-    if (days < 30) return `${Math.floor(days / 7)} week${Math.floor(days / 7) > 1 ? 's' : ''} ago`;
-    if (days < 365)
-        return `${Math.floor(days / 30)} month${Math.floor(days / 30) > 1 ? 's' : ''} ago`;
-    return date.toLocaleDateString();
-}
-
-function capitalizeFirst(str) {
-    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-}
-
-function showAlert(message, type) {
-    // Could be enhanced with a toast/alert UI
-    console.log(`[${type.toUpperCase()}] ${message}`);
-}
-
-function updateButtonState(loading) {
-    if (verifyBtn) {
-        if (loading) {
-            verifyBtn.disabled = true;
-            verifyBtn.textContent = 'Verifying...';
-            verifyBtn.style.opacity = '0.7';
-        } else {
-            verifyBtn.disabled = false;
-            verifyBtn.innerHTML = '<span>Verify Claim</span>';
-            verifyBtn.style.opacity = '1';
+    function renderEvidenceSources(sources) {
+        if (!sources || sources.length === 0) {
+            return `
+                <div class="col-span-2 bg-gray-50 border border-gray-200 rounded-lg p-12 text-center">
+                    <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <p class="text-gray-500 text-lg">No evidence sources available for this claim.</p>
+                </div>
+            `;
         }
+
+        return sources.map(source => {
+            const title = source.title || source.source || 'Untitled Source';
+            const snippet = source.snippet || source.excerpt || 'No description available.';
+            const url = source.url || '#';
+            const date = formatDate(source.published_date || source.date);
+
+            // Determine stance badge
+            const entailment = (source.entailment_label || source.entailment || 'NEUTRAL').toUpperCase();
+            let badgeText = 'Context';
+            let badgeClass = 'bg-gray-100 text-gray-800';
+
+            if (entailment === 'ENTAILS' || entailment === 'SUPPORTS') {
+                badgeText = 'Supports';
+                badgeClass = 'bg-green-100 text-green-700';
+            } else if (entailment === 'CONTRADICTS' || entailment === 'REFUTES') {
+                badgeText = 'Contradicts';
+                badgeClass = 'bg-red-100 text-red-700';
+            }
+
+            return `
+                <div class="group bg-white border border-gray-200 rounded-lg p-5 hover:border-blue-400 hover:shadow-md transition-all duration-200 cursor-pointer">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <p class="font-bold text-gray-900">${escapeHtml(title)}</p>
+                            ${date ? `<p class="text-xs text-gray-500">${date}</p>` : ''}
+                        </div>
+                        <span class="px-2 py-1 rounded text-xs font-bold ${badgeClass}">
+                            ${badgeText}
+                        </span>
+                    </div>
+                    <p class="text-sm text-gray-600 line-clamp-3 leading-relaxed mb-4">
+                        ${escapeHtml(snippet)}
+                    </p>
+                    <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="flex items-center text-blue-600 font-semibold text-xs group-hover:underline">
+                        Read Source
+                        <svg class="w-3 h-3 ml-1" style="width: 12px; height: 12px; min-width: 12px; min-height: 12px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                    </a>
+                </div>
+            `;
+        }).join('');
     }
-}
 
-// ============================================
-// MOCK DATA GENERATOR
-// ============================================
-
-function generateMockResult(claim) {
-    const verdicts = [
-        {
-            value: 'true',
-            label: 'Mostly True',
-            title: 'Claim is Supported by Evidence',
-            summary: `Based on our analysis of ${Math.floor(Math.random() * 30) + 5} verified sources, this claim appears to be accurate and well-supported by recent news reports and credible sources.`,
-        },
-        {
-            value: 'false',
-            label: 'False',
-            title: 'Claim is Not Supported',
-            summary: `Our analysis found contradicting information from multiple reliable sources. The claim appears to be inaccurate or misleading.`,
-        },
-        {
-            value: 'partial',
-            label: 'Partially True',
-            title: 'Claim is Partially Accurate',
-            summary: `While some aspects of this claim are supported by evidence, other parts are disputed or lack sufficient verification.`,
-        },
-        {
-            value: 'unclear',
-            label: 'Unclear',
-            title: 'Insufficient Evidence',
-            summary: `There is limited available evidence on this specific claim. Further research or clarification may be needed for conclusive verification.`,
-        },
-    ];
-
-    const selectedVerdict = verdicts[Math.floor(Math.random() * verdicts.length)];
-
-    const supportingSources = [
-        {
-            source: 'Reuters',
-            date: '2024-01-15',
-            excerpt:
-                'Recent reports confirm the claim with substantial evidence from field researchers and official records.',
-            stance: 'supports',
-            relevanceScore: 95,
-        },
-        {
-            source: 'Associated Press',
-            date: '2024-01-14',
-            excerpt:
-                'Multiple independent sources corroborate the key facts stated in the claim. Verification complete.',
-            stance: 'supports',
-            relevanceScore: 88,
-        },
-        {
-            source: 'BBC',
-            date: '2024-01-13',
-            excerpt:
-                'Investigation into the matter supports the accuracy of these statements based on expert analysis.',
-            stance: 'supports',
-            relevanceScore: 82,
-        },
-    ];
-
-    const contradictingSources = [
-        {
-            source: 'Fact Check Daily',
-            date: '2024-01-16',
-            excerpt:
-                'While parts of the claim are accurate, the overall conclusion contradicts recent studies and data analysis.',
-            stance: 'contradicts',
-            relevanceScore: 78,
-        },
-    ];
-
-    const relatedArticles = [
-        {
-            source: 'The Guardian',
-            title: 'Deep Dive: Understanding the Context Behind These Claims',
-            date: '2024-01-12',
-            snippet: 'This comprehensive analysis explores the background and related factors that may influence the accuracy...',
-        },
-        {
-            source: 'NPR',
-            title: 'Experts Weigh In: What the Data Really Shows',
-            date: '2024-01-11',
-            snippet: 'Leading researchers discuss the scientific evidence and methodologies used to verify such claims...',
-        },
-        {
-            source: 'The New York Times',
-            title: 'Fact-Checking 101: How We Verify Information',
-            date: '2024-01-10',
-            snippet: 'Learn about the rigorous process fact-checkers use to ensure accuracy and prevent misinformation...',
-        },
-    ];
-
-    return {
-        verdict: selectedVerdict,
-        metrics: {
-            sourceQuality: Math.floor(Math.random() * 30) + 70, // 70-100%
-            evidenceCount: Math.floor(Math.random() * 15) + 5, // 5-20 sources
-            confidence: Math.floor(Math.random() * 20) + 80, // 80-100%
-        },
-        evidence: {
-            supporting: supportingSources.slice(0, Math.floor(Math.random() * 2) + 2),
-            contradicting: contradictingSources,
-        },
-        relatedArticles: relatedArticles,
-    };
-}
+    // Make helper functions globally accessible
+    window.escapeHtml = escapeHtml;
+    window.formatDate = formatDate;
+    window.smoothScrollTo = smoothScrollTo;
+});

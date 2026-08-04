@@ -2,13 +2,13 @@ import os
 import logging
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
-
+import time
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from dotenv import load_dotenv
 from services.utils import make_json_safe
 
-from services import FactCheckService
+from services.fact_check_service import FactCheckService
 
 # Load environment variables from .env
 load_dotenv()
@@ -92,7 +92,9 @@ def verify_claim():
         context = RequestContext(claim_text=claim)
 
         # The FactCheckService must accept and populate this context
+        start = time.time()
         result = fact_check_service.check_claim(claim, context)
+        logger.info(f"Pipeline execution time: {time.time() - start:.4f} seconds")
 
         # Make sure context debug is included if caller wants transparency
         response_payload = {
@@ -117,6 +119,7 @@ def verify_claim():
         }), 500
 
 
+@app.route("/health", methods=["GET"])
 @app.route("/api/health", methods=["GET"])
 def health_check():
     """Health check endpoint."""

@@ -390,6 +390,78 @@ body {
     font-size: 0.875rem;
 }
 
+/* ========================================
+   LOADING STATE
+   ======================================== */
+.loading {
+    text-align: center;
+    padding: var(--spacing-2xl);
+}
+
+.loading-spinner {
+    display: inline-block;
+    width: 50px;
+    height: 50px;
+    border: 4px solid var(--light-color);
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: var(--spacing-lg);
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.loading p {
+    color: var(--text-light);
+    font-size: 1.125rem;
+}
+
+/* ========================================
+   NOTIFICATIONS
+   ======================================== */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: var(--spacing-lg);
+    border-radius: var(--border-radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+    box-shadow: var(--shadow-lg);
+    color: white;
+    font-weight: 500;
+    transform: translateX(400px);
+    transition: transform var(--transition-base);
+    z-index: 2000;
+    max-width: 400px;
+}
+
+.notification.show {
+    transform: translateX(0);
+}
+
+.notification.success {
+    background: var(--gradient-success);
+}
+
+.notification.error {
+    background: var(--gradient-danger);
+}
+
+.notification.warning {
+    background: var(--gradient-warning);
+}
+
+.notification.info {
+    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+}
+
 /* ============================================
    FEATURES GRID - Vercel-Style Glassmorphism
    ============================================ */
@@ -481,6 +553,26 @@ body {
     color: #6b7280;
     line-height: 1.7;
     font-weight: 400;
+}
+
+/* ============================================
+   RESULTS SECTION
+   ============================================ */
+
+.results-section {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 3rem 2rem;
+}
+
+.result-container {
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 2.5rem;
+    box-shadow: var(--glass-shadow);
 }
 
 /* ============================================
@@ -855,6 +947,58 @@ body {
         color: var(--text-muted);
         font-size: 1rem;
     }
+
+    /* ============================================
+   NOTIFICATIONS
+   ============================================ */
+
+    .notification {
+        position: fixed;
+        top: 2rem;
+        right: 2rem;
+        padding: 1rem 1.5rem;
+        backdrop-filter: var(--glass-blur);
+        -webkit-backdrop-filter: var(--glass-blur);
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: 12px;
+        box-shadow: var(--glass-shadow);
+        z-index: 10000;
+        opacity: 0;
+        transform: translateX(400px);
+        transition: var(--transition-smooth);
+        font-weight: 500;
+        max-width: 400px;
+    }
+
+    .notification.show {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    .notification.success {
+        border-left: 4px solid #43a047;
+        color: #2e7d32;
+    }
+
+    .notification.error {
+        border-left: 4px solid #e53935;
+        color: #c62828;
+    }
+
+    .notification.warning {
+        border-left: 4px solid #ffb300;
+        color: #f57c00;
+    }
+
+    .notification.info {
+        border-left: 4px solid var(--primary-blue);
+        color: var(--primary-blue);
+    }
+
+    /* ============================================
+   UTILITY CLASSES
+   ============================================ */
 
     .text-gradient {
         background: linear-gradient(135deg, var(--primary-blue), var(--secondary-teal));

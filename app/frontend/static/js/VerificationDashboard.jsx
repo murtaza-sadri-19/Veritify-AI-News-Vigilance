@@ -1,253 +1,172 @@
-// ============================================
-// Verification Dashboard React Component
-// ============================================
+import React from 'react';
+import { ShieldAlert, CheckCircle, TrendingUp, Newspaper, ArrowUpRight } from 'lucide-react';
 
-import React, { useState } from 'react';
-
-const VerificationDashboard = ({ result = null, loading = false }) => {
-    const [activeTab, setActiveTab] = useState('evidence');
-
-    if (loading) {
-        return (
-            <div style={{ textAlign: 'center', padding: '3rem' }}>
-                <div className="loading-spinner"></div>
-                <p style={{ color: '#6b7280', fontSize: '1.125rem', marginTop: '1.5rem' }}>
-                    Verifying your claim...
-                </p>
-            </div>
-        );
-    }
-
-    if (!result) {
-        return <div></div>;
-    }
-
-    const { verdict, metrics, evidence, relatedArticles } = result;
-
-    const getVerdictColor = () => {
-        switch (verdict.value) {
-            case 'true':
-                return '#10b981';
-            case 'false':
-                return '#ef4444';
-            case 'partial':
-                return '#f59e0b';
-            case 'unclear':
-                return '#8b5cf6';
-            default:
-                return '#9ca3af';
+// ============================================================================
+// MOCK DATA - Use this to test the component immediately
+// ============================================================================
+const MOCK_DATA = {
+    isFalse: true, // Toggle to false to see the "TRUE" state
+    claimText: "Climate change is a hoax.",
+    confidenceScore: 92,
+    sources: [
+        {
+            id: 1,
+            name: "Scientific American",
+            date: "Mar 7, 2023",
+            type: "Refutes",
+            snippet: "Climate change is a hoax, what icant rounded-xl hover:shadow-lg hover:border-blue-400 transition-all group...",
+            url: "#"
+        },
+        {
+            id: 2,
+            name: "NASA Climate Report",
+            date: "Feb 8, 2022",
+            type: "Refutes",
+            snippet: "Climate change is a hoax, what icant rounded-xl hover:shadow-lg hover:border-blue-400 transition-all group...",
+            url: "#"
+        },
+        {
+            id: 3,
+            name: "IPCC Assessment",
+            date: "Jan 15, 2023",
+            type: "Refutes",
+            snippet: "Comprehensive scientific evidence demonstrates that human activities are driving unprecedented climate shifts globally...",
+            url: "#"
+        },
+        {
+            id: 4,
+            name: "Nature Journal",
+            date: "Dec 3, 2022",
+            type: "Refutes",
+            snippet: "Peer-reviewed research confirms the reality of anthropogenic climate change through multiple independent data sources...",
+            url: "#"
         }
-    };
-
-    return (
-        <div className="results-container">
-            {/* Verdict Banner */}
-            <div className={`verdict-banner ${verdict.value}`}>
-                <div className="verdict-header">
-                    <div className="verdict-icon">
-                        {verdict.value === 'true' && '✓'}
-                        {verdict.value === 'false' && '✗'}
-                        {verdict.value === 'partial' && '⚠'}
-                        {verdict.value === 'unclear' && '?'}
-                    </div>
-                    <div className="verdict-content">
-                        <div className="verdict-label">{verdict.label}</div>
-                        <h2>{verdict.title}</h2>
-                    </div>
-                </div>
-                <div className="verdict-summary">{verdict.summary}</div>
-            </div>
-
-            {/* Trust Metrics Grid */}
-            <div className="trust-metrics">
-                <div className="metric-card">
-                    <div className="metric-label">Source Quality</div>
-                    <div className="metric-value text-gradient">{metrics.sourceQuality}%</div>
-                    <div className="metric-subtitle">Credibility Score</div>
-                </div>
-                <div className="metric-card">
-                    <div className="metric-label">Evidence Found</div>
-                    <div className="metric-value text-gradient">{metrics.evidenceCount}</div>
-                    <div className="metric-subtitle">Supporting Sources</div>
-                </div>
-                <div className="metric-card">
-                    <div className="metric-label">Verdict Confidence</div>
-                    <div className="metric-value text-gradient">{metrics.confidence}%</div>
-                    <div className="metric-subtitle">Analysis Confidence</div>
-                </div>
-            </div>
-
-            {/* Tab Navigation */}
-            <div
-                style={{
-                    display: 'flex',
-                    gap: '1rem',
-                    marginBottom: '2rem',
-                    borderBottom: '1px solid #e5e7eb',
-                    paddingBottom: '1rem',
-                }}
-            >
-                <button
-                    onClick={() => setActiveTab('evidence')}
-                    style={{
-                        padding: '0.75rem 1.5rem',
-                        background: activeTab === 'evidence' ? '#1e88e5' : 'transparent',
-                        color: activeTab === 'evidence' ? 'white' : '#6b7280',
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        transition: 'all 0.3s ease',
-                        fontSize: '0.95rem',
-                        fontWeight: '600',
-                    }}
-                >
-                    Evidence ({evidence.supporting.length})
-                </button>
-                <button
-                    onClick={() => setActiveTab('related')}
-                    style={{
-                        padding: '0.75rem 1.5rem',
-                        background: activeTab === 'related' ? '#1e88e5' : 'transparent',
-                        color: activeTab === 'related' ? 'white' : '#6b7280',
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        transition: 'all 0.3s ease',
-                        fontSize: '0.95rem',
-                        fontWeight: '600',
-                    }}
-                >
-                    Related Articles
-                </button>
-            </div>
-
-            {/* Evidence Tab */}
-            {activeTab === 'evidence' && (
-                <div className="evidence-section">
-                    <h3 className="section-heading">
-                        Supporting Evidence
-                        <span style={{ fontSize: '0.9em', color: '#9ca3af' }}>
-                            ({evidence.supporting.length})
-                        </span>
-                    </h3>
-                    <div className="evidence-grid">
-                        {evidence.supporting.map((item, index) => (
-                            <EvidenceCard key={index} evidence={item} />
-                        ))}
-                    </div>
-
-                    {evidence.contradicting.length > 0 && (
-                        <>
-                            <h3 className="section-heading">
-                                Contradicting Evidence
-                                <span style={{ fontSize: '0.9em', color: '#9ca3af' }}>
-                                    ({evidence.contradicting.length})
-                                </span>
-                            </h3>
-                            <div className="evidence-grid">
-                                {evidence.contradicting.map((item, index) => (
-                                    <EvidenceCard key={index} evidence={item} />
-                                ))}
-                            </div>
-                        </>
-                    )}
-                </div>
-            )}
-
-            {/* Related Articles Tab */}
-            {activeTab === 'related' && (
-                <div className="evidence-section">
-                    <h3 className="section-heading">
-                        Related Articles
-                        <span style={{ fontSize: '0.9em', color: '#9ca3af' }}>
-                            ({relatedArticles.length})
-                        </span>
-                    </h3>
-                    <div className="evidence-grid">
-                        {relatedArticles.map((article, index) => (
-                            <div key={index} className="evidence-card" style={{ cursor: 'pointer' }}>
-                                <div className="evidence-header">
-                                    <div
-                                        className="source-icon"
-                                        style={{ background: 'linear-gradient(135deg, #8b5cf6, #06b6d4)' }}
-                                    >
-                                        {article.source.substring(0, 2).toUpperCase()}
-                                    </div>
-                                    <div className="evidence-info">
-                                        <div className="source-name">{article.title}</div>
-                                        <div className="source-date">
-                                            {article.source} • {formatDate(article.date)}
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="evidence-text">{article.snippet}</div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-        </div>
-    );
+    ]
 };
 
-// ============================================
-// Evidence Card Component
-// ============================================
-
-const EvidenceCard = ({ evidence }) => {
-    const stanceStyles = {
-        supports: { background: 'rgba(16, 185, 129, 0.1)', color: '#047857' },
-        contradicts: { background: 'rgba(239, 68, 68, 0.1)', color: '#dc2626' },
-        neutral: { background: 'rgba(107, 114, 128, 0.1)', color: '#374151' },
-    };
-
-    const stanceStyle = stanceStyles[evidence.stance.toLowerCase()] || stanceStyles.neutral;
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
+const VerificationDashboard = ({ data = MOCK_DATA }) => {
+    const { isFalse, claimText, confidenceScore, sources } = data;
 
     return (
-        <div className="evidence-card">
-            <div className="evidence-header">
-                <div className="source-icon">
-                    {evidence.source.substring(0, 2).toUpperCase()}
-                </div>
-                <div className="evidence-info">
-                    <div className="source-name">{evidence.source}</div>
-                    <div className="source-date">{formatDate(evidence.date)}</div>
-                </div>
+        <div className="min-h-screen bg-gray-50 py-12 px-4">
+            <div className="max-w-4xl mx-auto space-y-8 p-4">
+
+                {/* ================================================================== */}
+                {/* ZONE 1: The Verdict Banner */}
+                {/* ================================================================== */}
                 <div
-                    className="stance-badge"
-                    style={{
-                        background: stanceStyle.background,
-                        color: stanceStyle.color,
-                        border: `1px solid ${stanceStyle.color}20`,
-                    }}
+                    className={`rounded-xl border-l-[8px] p-8 shadow-sm flex items-start gap-6 ${isFalse ? 'bg-red-50 border-red-600' : 'bg-green-50 border-green-600'
+                        }`}
                 >
-                    {evidence.stance.charAt(0).toUpperCase() + evidence.stance.slice(1).toLowerCase()}
+                    {/* Icon - LOCKED SIZE */}
+                    <div className={`p-3 rounded-full ${isFalse ? 'bg-red-100' : 'bg-green-100'}`}>
+                        {isFalse ? (
+                            <ShieldAlert className="w-10 h-10 text-red-600" />
+                        ) : (
+                            <CheckCircle className="w-10 h-10 text-green-600" />
+                        )}
+                    </div>
+                    <div>
+                        <h1
+                            className={`text-4xl font-black uppercase tracking-tight mb-2 ${isFalse ? 'text-red-700' : 'text-green-700'
+                                }`}
+                        >
+                            {isFalse ? 'Claim Proven False' : 'Claim Confirmed True'}
+                        </h1>
+                        <p className="text-xl text-gray-700 font-medium">
+                            Claim: <span className="italic text-gray-600">"{claimText}"</span>
+                        </p>
+                    </div>
                 </div>
-            </div>
-            <div className="evidence-text">{evidence.excerpt}</div>
-            <div className="score-bar">
-                <div className="score-fill" style={{ width: `${evidence.relevanceScore}%` }}></div>
+
+                {/* ================================================================== */}
+                {/* ZONE 2: The "Trust Metrics" Grid */}
+                {/* ================================================================== */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+                    {/* Card 1: Confidence Score */}
+                    <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm flex flex-col justify-between">
+                        <div className="flex items-center gap-2 text-gray-500 mb-2">
+                            <TrendingUp className="w-5 h-5" />
+                            <span className="font-semibold text-sm uppercase tracking-wider">AI Confidence</span>
+                        </div>
+                        <div className="text-5xl font-black text-gray-900 mb-4">{confidenceScore}%</div>
+                        {/* Progress Bar */}
+                        <div className="w-full bg-gray-100 h-3 rounded-full overflow-hidden">
+                            <div
+                                className={`h-full rounded-full ${isFalse ? 'bg-red-500' : 'bg-green-500'}`}
+                                style={{ width: `${confidenceScore}%` }}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Card 2: Source Count */}
+                    <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                        <p className="text-gray-500 font-semibold text-sm uppercase tracking-wider mb-2">
+                            Sources Analyzed
+                        </p>
+                        <p className="text-4xl font-bold text-gray-900">24</p>
+                        <p className="text-sm text-gray-400 mt-2">Across 12 global regions</p>
+                    </div>
+
+                    {/* Card 3: Bias Metric */}
+                    <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                        <p className="text-gray-500 font-semibold text-sm uppercase tracking-wider mb-2">
+                            Bias Leaning
+                        </p>
+                        <p className="text-2xl font-bold text-gray-900">Neutral / Scientific</p>
+                        <div className="flex gap-1 mt-3">
+                            <div className="h-2 flex-1 bg-blue-200 rounded-l-full"></div>
+                            <div className="h-2 flex-1 bg-gray-400"></div>
+                            <div className="h-2 flex-1 bg-red-200 rounded-r-full"></div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* ================================================================== */}
+                {/* ZONE 3: Evidence Grid */}
+                {/* ================================================================== */}
+                <div>
+                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-[0.2em] mb-6">
+                        Primary Evidence Sources
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {sources.map((source) => (
+                            <div
+                                key={source.id}
+                                className="group bg-white border border-gray-200 rounded-lg p-5 hover:border-blue-400 hover:shadow-md transition-all cursor-pointer"
+                            >
+                                <div className="flex justify-between items-start mb-3">
+                                    <div>
+                                        <p className="font-bold text-gray-900">{source.name}</p>
+                                        <p className="text-xs text-gray-500">{source.date}</p>
+                                    </div>
+                                    <span
+                                        className={`px-2 py-1 rounded text-xs font-bold ${source.type === 'Refutes'
+                                                ? 'bg-red-100 text-red-700'
+                                                : 'bg-green-100 text-green-700'
+                                            }`}
+                                    >
+                                        {source.type}
+                                    </span>
+                                </div>
+                                <p className="text-sm text-gray-600 line-clamp-3 leading-relaxed mb-4">
+                                    {source.snippet}
+                                </p>
+                                <div className="flex items-center text-blue-600 font-semibold text-xs group-hover:underline">
+                                    Read Full Report <ArrowUpRight className="w-3 h-3 ml-1" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
             </div>
         </div>
     );
-};
-
-// ============================================
-// Utility Functions
-// ============================================
-
-const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diff = now - date;
-
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    if (days < 1) return 'Today';
-    if (days < 7) return `${days} day${days > 1 ? 's' : ''} ago`;
-    if (days < 30) return `${Math.floor(days / 7)} week${Math.floor(days / 7) > 1 ? 's' : ''} ago`;
-    if (days < 365)
-        return `${Math.floor(days / 30)} month${Math.floor(days / 30) > 1 ? 's' : ''} ago`;
-    return date.toLocaleDateString();
 };
 
 export default VerificationDashboard;

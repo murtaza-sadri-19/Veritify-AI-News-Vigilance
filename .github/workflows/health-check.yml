@@ -1,0 +1,15 @@
+name: Daily Health Check
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Hit health endpoint
+        run: |
+          curl -f https://huggingface.co/spaces/murtaza19/Veritify-News-Vigilance/api/health || exit 1
