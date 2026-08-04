@@ -20,6 +20,6 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          hf upload murtaza19/TruthTrack . \
+          hf upload murtaza19/Veritify-News-Vigilance . \
             --repo-type space \
             --commit-message "Deploy from GitHub Actions"
