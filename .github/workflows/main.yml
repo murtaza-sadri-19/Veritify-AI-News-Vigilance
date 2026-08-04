@@ -2,7 +2,7 @@ name: Deploy to Hugging Face Space
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -16,10 +16,12 @@ jobs:
       - name: Install Hugging Face CLI
         run: pip install -U huggingface_hub
 
-      - name: Upload to Hugging Face Space (binary-safe)
+      - name: Upload to Hugging Face Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           hf upload murtaza19/Veritify-News-Vigilance . \
             --repo-type space \
-            --commit-message "Deploy from GitHub Actions"
+            --commit-message "Deploy from GitHub Actions" \
+            --include "backend/*,frontend/*,Dockerfile,requirements.txt,README.md" \
+            --exclude ".git,.github,__pycache__,*.pyc,.env,venv,node_modules,tests,pytest.ini,.gitignore,.gitattributes,QUICK_START.md,render.yaml,Procfile"
